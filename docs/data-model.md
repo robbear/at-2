@@ -14,7 +14,7 @@ A marker is a geo-tagged content post. It is the core entity in Atlasphere.
 | `snippetText` | `string` | Brief preview text |
 | `snippetImage` | `string` | R2 path to thumbnail/preview image |
 | `contentUrl` | `string` | R2 path to full MDX content page |
-| `markdown` | `string` | MDX source (authoring content) |
+| `markdown` | `string` | MDX source (authoring content — raw textarea input) |
 | `tags` | `string[]` | Open-ended tags, no taxonomy |
 | `location` | `GeoJSON Point` | `{ type: "Point", coordinates: [lng, lat] }` |
 | `datetime` | `Date` | Event/content date (when the content event occurred) |
@@ -63,6 +63,16 @@ A user profile.
 |---|---|
 | `markers` | All marker documents |
 | `profiles` | All user profile documents |
+
+### Atlas cluster strategy
+
+at-2 shares the existing MongoDB Atlas cluster with v1 but uses a **separate database**:
+
+- v1 database: `atlasphere` (do not touch)
+- v2 database: `atlasphere-v2`
+
+This avoids additional Atlas cost while keeping v1 data fully isolated. Migration
+scripts can read from `atlasphere` when needed.
 
 ### Indexes
 - `markers.location` — 2dsphere geospatial index (required for `$nearSphere`)

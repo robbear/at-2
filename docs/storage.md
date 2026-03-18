@@ -60,6 +60,18 @@ for writes.
 
 ---
 
+## Legacy v1 content (AWS S3)
+
+v1 marker content and images are stored in AWS S3. at-2 does **not** migrate
+this content at launch.
+
+- Legacy markers in MongoDB may reference S3 URLs in `contentUrl` and `snippetImage`
+- These URLs remain valid and are rendered as-is in v2
+- All new content created in v2 goes to R2
+- A future bulk migration (S3 → R2) may be run later, or legacy content may be
+  purged; decision deferred
+- AWS S3 bucket remains active for as long as v1 is live or legacy content is needed
+
 ## Env vars
 
 | Var | Description |

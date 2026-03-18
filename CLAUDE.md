@@ -109,12 +109,12 @@ Two providers supported: **Google Maps** (primary) and **Mapbox** (fallback).
 Content authoring is **MDX-based**. The legacy custom Markdown extensions from v1
 are not supported and will not be reimplemented.
 
+- Authoring UI is a **plain textarea** with raw MDX input — no rich editor, no
+  editor library dependencies
 - Legacy content in MongoDB that contains old extensions will render as-is;
   some text may look odd to readers — this is acceptable for now
 - A future migration tool may reparse and rewrite legacy content to valid MDX,
   or legacy content may be purged; decision deferred
-- Content authoring approach is otherwise an open design space — do not assume
-  the v1 authoring UI as a contract
 
 ---
 

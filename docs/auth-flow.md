@@ -50,10 +50,45 @@ check is skipped entirely — no code change required.
 
 ---
 
+## v1 account migration
+
+v1 accounts were email+password credentials stored in AWS Cognito. Password hashes
+are not exportable from Cognito — a credential migration is impossible.
+
+### Migration strategy: email-matched profile linking
+
+v2 uses Google OAuth. On a user's first Google sign-in, the API checks whether a
+MongoDB profile already exists for that Google account email:
+
+- **Match found** — the existing v1 profile is linked to the new Google identity.
+  The user's `_id` is updated to the Auth.js Google sub, but `userId`, markers,
+  and all content are preserved. Transparent to the user.
+- **No match** — a fresh profile is created as a new v2 account.
+
+### Practical rollout
+
+Since all v1 users are known personally, they can be told directly:
+> "v2 uses Google sign-in — use the same email address you registered with."
+
+Edge case: a v1 user whose Google account email differs from their Cognito email.
+Handle these individually given the small user base.
+
+### Cognito sunset
+
+Once all known v1 users have migrated to v2, the Cognito User Pool and Identity
+Pool can be decommissioned. There is no automated cutover — this is a manual
+decision once v2 is stable.
+
+---
+
 ## OAuth providers
 
-TBD — to be configured in Auth.js. Likely candidates: Google, GitHub.
-Email/password (credentials provider) should also be supported.
+**Google OAuth only** for initial launch. Apple and email/password may be added
+later as the user base grows.
+
+Auth.js Google provider requires:
+- A Google Cloud project with the OAuth 2.0 credentials configured
+- Authorized redirect URI: `{AUTH_URL}/api/auth/callback/google`
 
 ---
 
@@ -63,5 +98,7 @@ Email/password (credentials provider) should also be supported.
 |---|---|
 | `AUTH_SECRET` | Auth.js secret (required) |
 | `AUTH_URL` | Canonical URL of the app (required in production) |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `REGISTRATION_ALLOWLIST` | Comma-separated allowed emails |
 | `REGISTRATION_OPEN` | `true` to open registration to all |
