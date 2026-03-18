@@ -156,6 +156,21 @@ are not supported and will not be reimplemented.
 
 ---
 
+## Git workflow
+
+- **Never push directly to `main`** — main is protected
+- All work happens on a feature branch, e.g. `feat/phase-1-scaffold`, `fix/auth-callback`, etc.
+- Branch naming: `feat/`, `fix/`, `chore/`, or `docs/` prefix followed by a short description
+- When work is complete, push the branch and open a PR against main:
+  ```
+  git push -u origin <branch-name>
+  gh pr create --title "<title>" --body "<summary of changes>"
+  ```
+- PRs are reviewed and merged by the repo owner — do not merge your own PRs
+- Commit messages should be concise and descriptive (e.g. `feat: scaffold monorepo root and shared package`)
+
+---
+
 ## Docs index
 
 | File | Contents |
