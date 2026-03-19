@@ -79,6 +79,55 @@ or tiers without flagging the cost implication explicitly.
 
 ---
 
+## Database isolation
+
+All three contexts share the same `atlasphere-cluster` MongoDB Atlas cluster but
+use **separate databases** to prevent any cross-contamination between production
+data, test data, and local development data.
+
+### Three database contexts
+
+| Context | Database name | Who accesses it |
+|---|---|---|
+| Production | `atlasphere-v2` | Vercel production deployment only |
+| Local dev | `atlasphere-v2-dev` | Developer's local instance |
+| CI/CD | `atlasphere-v2-test` | GitHub Actions only |
+
+### How database names are specified
+
+The Atlas connection string is cluster-level and does not include a database name.
+The database name is passed as the `dbName` option in mongoose's `connect()` call:
+
+```ts
+await mongoose.connect(uri, { dbName: "atlasphere-v2" });
+```
+
+This is how all three contexts are isolated — same cluster URI, different `dbName`
+per context.
+
+### Environment variables
+
+- `MONGODB_URI` — cluster connection string. Used by production code with
+  `dbName: "atlasphere-v2"`. Set in Vercel production environment.
+  Never referenced in test code.
+- `MONGODB_URI_TEST` — same cluster connection string. Used by CI tests with
+  `dbName: "atlasphere-v2-test"`. Set as a GitHub Actions secret.
+  Used exclusively by CI test runs.
+- Local dev uses a `.env.local` file (gitignored) with the same connection
+  string and `dbName: "atlasphere-v2-dev"`. A `.env.local.example` file is
+  maintained in the repo as a template.
+
+### Rules
+
+- Test code must never reference `MONGODB_URI` — only `MONGODB_URI_TEST`
+- Production database (`atlasphere-v2`) is never written to by tests or local dev
+- CI test runs wipe the test database clean at the start of each run (`beforeAll`
+  hook that drops all collections) — no teardown needed, next run wipes anyway
+- Local dev database (`atlasphere-v2-dev`) is the developer's responsibility to
+  manage
+
+---
+
 ## Registration gating
 
 Self-serve signup UI is implemented from day one, but account creation is gated

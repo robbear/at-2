@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
 
-export async function connectDb(uri: string): Promise<void> {
-  await mongoose.connect(uri, {
-    dbName: "atlasphere-v2",
-  });
+export async function connectDb(uri: string, dbName: string): Promise<void> {
+  await mongoose.connect(uri, { dbName });
 }
 
 export function getDbState(): "connected" | "disconnected" {

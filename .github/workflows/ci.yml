@@ -38,7 +38,7 @@ jobs:
       - name: Test (api)
         run: pnpm --filter '@at-2/api' test -- --reporter=verbose
         env:
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_URI_TEST: ${{ secrets.MONGODB_URI_TEST }}
 
       - name: Test (web)
         run: pnpm --filter '@at-2/web' test -- --reporter=verbose

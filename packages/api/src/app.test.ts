@@ -32,15 +32,15 @@ describe("MongoDB Atlas connection", () => {
     await disconnectDb();
   });
 
-  it("connects to the real Atlas cluster using MONGODB_URI from environment", async () => {
-    const uri = process.env["MONGODB_URI"];
+  it("connects to the real Atlas cluster using MONGODB_URI_TEST from environment", async () => {
+    const uri = process.env["MONGODB_URI_TEST"];
     if (!uri) {
       throw new Error(
-        "MONGODB_URI is not set — set it to your Atlas connection string to run this test"
+        "MONGODB_URI_TEST is not set — set it to your Atlas connection string to run this test"
       );
     }
 
-    await connectDb(uri);
+    await connectDb(uri, "atlasphere-v2-test");
     const state = getDbState();
     expect(state).toBe("connected");
   });
