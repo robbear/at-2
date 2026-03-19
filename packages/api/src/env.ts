@@ -6,6 +6,12 @@ const EnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().default("noreply@atlasphere.app"),
+  APP_URL: z.string().default("http://localhost:3000"),
+  REGISTRATION_ALLOWLIST: z.string().optional(),
+  REGISTRATION_OPEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

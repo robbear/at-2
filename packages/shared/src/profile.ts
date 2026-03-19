@@ -8,6 +8,11 @@ export const ProfileSchema = z.object({
   profilePicUrl: z.string().optional(),
   bio: z.string().optional(),
   createdAt: z.coerce.date(),
+  // Auth fields — absent on v1 profiles that haven't migrated yet
+  passwordHash: z.string().optional(),
+  emailVerified: z.boolean().default(false),
+  verificationToken: z.string().optional(),
+  resetToken: z.string().optional(),
 });
 
 export type Profile = z.infer<typeof ProfileSchema>;
