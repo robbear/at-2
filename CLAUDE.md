@@ -11,6 +11,27 @@ Repo: robbear/at-2.git
 
 ---
 
+## Development environment
+
+Node.js is managed via **nvm** — do not install Node.js system-wide or via Homebrew.
+
+```bash
+nvm install    # installs the version pinned in .nvmrc (Node 22)
+nvm use        # switches to the pinned version in the current shell
+```
+
+**pnpm** is managed via **corepack**, which ships with Node and reads the
+`packageManager` field in `package.json`. After `nvm use`, enable it once:
+
+```bash
+corepack enable pnpm
+```
+
+Corepack will automatically download and use the exact pnpm version declared in
+`package.json` (`pnpm@9.15.0`). Do not install pnpm globally via `npm install -g`.
+
+---
+
 ## Cost constraint
 
 This is a **near-zero monthly cost** project until user scale justifies otherwise.
