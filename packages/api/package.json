@@ -13,14 +13,18 @@
   },
   "dependencies": {
     "@at-2/shared": "workspace:*",
+    "@auth/core": "0.41.0",
+    "bcryptjs": "^3.0.3",
     "fastify": "^5.2.1",
     "mongoose": "^8.12.1",
+    "resend": "^6.9.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.13.9",
-    "supertest": "^7.0.0",
     "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"
