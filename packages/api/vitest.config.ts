@@ -25,6 +25,7 @@ export default defineConfig({
       // MONGODB_URI is not used for actual connections in tests (MONGODB_URI_TEST
       // is passed explicitly to connectDb() in beforeAll hooks).
       MONGODB_URI: "mongodb://localhost:27017/atlasphere-test",
+      MONGODB_DB_NAME: "atlasphere-v2-test",
       AUTH_SECRET: "test-secret-do-not-use-in-production-must-be-32-chars",
     },
   },

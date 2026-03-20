@@ -66,13 +66,19 @@ A user profile.
 
 ### Atlas cluster strategy
 
-at-2 shares the existing MongoDB Atlas cluster with v1 but uses a **separate database**:
+at-2 shares the existing MongoDB Atlas cluster with v1 but uses separate databases
+per context. All three contexts connect to the same cluster URI; the database name
+is specified separately via the `MONGODB_DB_NAME` environment variable.
 
-- v1 database: `atlasphere` (do not touch)
-- v2 database: `atlasphere-v2`
+| Context | Database | Set by |
+|---|---|---|
+| Production | `atlasphere-v2` | `MONGODB_DB_NAME` in Vercel |
+| Local dev | `atlasphere-v2-dev` | `MONGODB_DB_NAME` in `.env.local` |
+| CI/CD | `atlasphere-v2-test` | `MONGODB_DB_NAME` in GitHub Actions |
 
-This avoids additional Atlas cost while keeping v1 data fully isolated. Migration
-scripts can read from `atlasphere` when needed.
+- v1 database: `atlasphere` (do not touch — read-only for migration scripts if needed)
+
+This avoids additional Atlas cost while keeping all contexts fully isolated.
 
 ### Indexes
 - `markers.location` — 2dsphere geospatial index (required for `$nearSphere`)

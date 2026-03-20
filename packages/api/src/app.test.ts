@@ -71,4 +71,17 @@ describe("Env var validation", () => {
       }
     }
   });
+
+  it("parseEnv throws when MONGODB_DB_NAME is missing", () => {
+    const original = process.env["MONGODB_DB_NAME"];
+    delete process.env["MONGODB_DB_NAME"];
+
+    try {
+      expect(() => parseEnv()).toThrow("MONGODB_DB_NAME");
+    } finally {
+      if (original !== undefined) {
+        process.env["MONGODB_DB_NAME"] = original;
+      }
+    }
+  });
 });

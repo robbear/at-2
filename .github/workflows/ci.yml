@@ -39,6 +39,7 @@ jobs:
         run: pnpm --filter '@at-2/api' test -- --reporter=verbose
         env:
           MONGODB_URI_TEST: ${{ secrets.MONGODB_URI_TEST }}
+          MONGODB_DB_NAME: atlasphere-v2-test
 
       - name: Test (web)
         run: pnpm --filter '@at-2/web' test -- --reporter=verbose

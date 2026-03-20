@@ -5,7 +5,7 @@ import { buildApp } from "./app.js";
 async function main(): Promise<void> {
   const env = parseEnv();
 
-  await connectDb(env.MONGODB_URI, "atlasphere-v2");
+  await connectDb(env.MONGODB_URI, env.MONGODB_DB_NAME);
 
   const app = await buildApp();
   await app.listen({ port: env.PORT, host: "0.0.0.0" });

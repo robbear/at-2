@@ -96,26 +96,27 @@ data, test data, and local development data.
 ### How database names are specified
 
 The Atlas connection string is cluster-level and does not include a database name.
-The database name is passed as the `dbName` option in mongoose's `connect()` call:
+The database name is supplied via the `MONGODB_DB_NAME` environment variable, which
+`server.ts` passes to mongoose's `connect()` call:
 
 ```ts
-await mongoose.connect(uri, { dbName: "atlasphere-v2" });
+await mongoose.connect(env.MONGODB_URI, { dbName: env.MONGODB_DB_NAME });
 ```
 
-This is how all three contexts are isolated — same cluster URI, different `dbName`
+This is how all three contexts are isolated — same cluster URI, different `MONGODB_DB_NAME`
 per context.
 
 ### Environment variables
 
-- `MONGODB_URI` — cluster connection string. Used by production code with
-  `dbName: "atlasphere-v2"`. Set in Vercel production environment.
-  Never referenced in test code.
-- `MONGODB_URI_TEST` — same cluster connection string. Used by CI tests with
-  `dbName: "atlasphere-v2-test"`. Set as a GitHub Actions secret.
-  Used exclusively by CI test runs.
-- Local dev uses a `.env.local` file (gitignored) with the same connection
-  string and `dbName: "atlasphere-v2-dev"`. A `.env.local.example` file is
-  maintained in the repo as a template.
+- `MONGODB_URI` — cluster connection string (no database name in the URI). Set in
+  Vercel production environment. Never referenced in test code.
+- `MONGODB_DB_NAME` — database name for the running context. Required by `parseEnv()`;
+  startup fails with a clear error if absent.
+  - Production (Vercel): `atlasphere-v2`
+  - Local dev (`.env.local`): `atlasphere-v2-dev`
+  - CI/CD (GitHub Actions): `atlasphere-v2-test`
+- `MONGODB_URI_TEST` — same cluster connection string. Passed explicitly to `connectDb()`
+  in test `beforeAll` hooks. Set as a GitHub Actions secret. Never used by `server.ts`.
 
 ### Rules
 
