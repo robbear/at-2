@@ -1,3 +1,15 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+
+// Load .env.local from repo root in non-production environments.
+// Must run before parseEnv() is called. override: false ensures shell/CI/Vercel
+// env vars always take precedence over .env.local values.
+if (process.env["NODE_ENV"] !== "production") {
+  const dirname = fileURLToPath(new URL(".", import.meta.url));
+  config({ path: resolve(dirname, "../../../.env.local"), override: false });
+}
+
 import { parseEnv } from "./env.js";
 import { connectDb } from "./db.js";
 import { buildApp } from "./app.js";
