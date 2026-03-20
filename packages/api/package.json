@@ -15,6 +15,7 @@
     "@at-2/shared": "workspace:*",
     "@auth/core": "0.41.0",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^16.0.0",
     "fastify": "^5.2.1",
     "mongoose": "^8.12.1",
     "resend": "^6.9.4",
