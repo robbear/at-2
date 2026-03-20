@@ -17,7 +17,7 @@ export async function registerRoute(app: FastifyInstance): Promise<void> {
         .send({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
 
-    const { email, password } = parsed.data;
+    const { email, username, password } = parsed.data;
 
     if (!isEmailAllowed(email, env)) {
       return reply
@@ -32,14 +32,18 @@ export async function registerRoute(app: FastifyInstance): Promise<void> {
       return reply.status(409).send({ error: "Email already registered" });
     }
 
+    const taken = await Profile.findOne({ userId: username });
+    if (taken) {
+      return reply.status(409).send({ error: "Username already taken" });
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     const verificationToken = randomUUID();
     const id = randomUUID();
-    const userId = id; // public handle defaults to the same UUID until user updates it
 
     await Profile.create({
       _id: id,
-      userId,
+      userId: username,
       email,
       name: email.split("@")[0] ?? email,
       createdAt: new Date(),

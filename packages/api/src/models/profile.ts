@@ -14,6 +14,7 @@ const profileSchema = new Schema<Profile>(
     emailVerified: { type: Boolean, required: true, default: false },
     verificationToken: { type: String, index: true, sparse: true },
     resetToken: { type: String, index: true, sparse: true },
+    resetTokenExpiresAt: { type: Date, index: true, sparse: true },
   },
   {
     // _id is managed by us (string), not Mongoose's ObjectId

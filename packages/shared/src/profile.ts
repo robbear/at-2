@@ -13,6 +13,7 @@ export const ProfileSchema = z.object({
   emailVerified: z.boolean().default(false),
   verificationToken: z.string().optional(),
   resetToken: z.string().optional(),
+  resetTokenExpiresAt: z.coerce.date().optional(),
 });
 
 export type Profile = z.infer<typeof ProfileSchema>;
