@@ -28,7 +28,12 @@ export async function resetRequestRoute(app: FastifyInstance): Promise<void> {
 
     await Profile.updateOne(
       { _id: profile._id },
-      { $set: { resetToken: tokenHash } }
+      {
+        $set: {
+          resetToken: tokenHash,
+          resetTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      }
     );
 
     await sendPasswordResetEmail(email, rawToken, env);

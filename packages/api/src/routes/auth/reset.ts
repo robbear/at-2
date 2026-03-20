@@ -33,13 +33,17 @@ export async function resetRoute(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: "Invalid or expired reset token" });
     }
 
+    if (!matched.resetTokenExpiresAt || matched.resetTokenExpiresAt < new Date()) {
+      return reply.status(400).send({ error: "Invalid or expired reset token" });
+    }
+
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     await Profile.updateOne(
       { _id: matched._id },
       {
         $set: { passwordHash, emailVerified: true },
-        $unset: { resetToken: "" },
+        $unset: { resetToken: "", resetTokenExpiresAt: "" },
       }
     );
 

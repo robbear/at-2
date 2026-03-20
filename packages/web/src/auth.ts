@@ -1,6 +1,13 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthConfig, CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { CredentialsSchema } from "@at-2/shared";
+
+class AuthError extends CredentialsSignin {
+  constructor(public code: string) {
+    super();
+    this.code = code;
+  }
+}
 
 const config: NextAuthConfig = {
   providers: [
@@ -20,7 +27,12 @@ const config: NextAuthConfig = {
           body: JSON.stringify(parsed.data),
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+          const body = (await res.json()) as { code?: string };
+          if (body.code === "NO_PASSWORD") throw new AuthError("NO_PASSWORD");
+          if (body.code === "EMAIL_NOT_VERIFIED") throw new AuthError("EMAIL_NOT_VERIFIED");
+          return null;
+        }
 
         const user = (await res.json()) as { id: string; email: string; name: string };
         return { id: user.id, email: user.email, name: user.name };

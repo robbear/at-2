@@ -3,7 +3,7 @@
 import { signIn, signOut } from "../../auth.js";
 import { RegistrationSchema, PasswordResetRequestSchema, PasswordResetSchema } from "@at-2/shared";
 import { redirect } from "next/navigation";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 
 export async function signInAction(formData: FormData): Promise<void> {
   try {
@@ -13,6 +13,10 @@ export async function signInAction(formData: FormData): Promise<void> {
       redirectTo: "/",
     });
   } catch (err) {
+    if (err instanceof CredentialsSignin) {
+      const code = (err as { code?: string }).code ?? "";
+      redirect(`/auth/signin?error=CredentialsSignin&code=${encodeURIComponent(code)}`);
+    }
     if (err instanceof AuthError) {
       redirect(`/auth/error?error=${encodeURIComponent(err.type)}`);
     }
@@ -30,6 +34,7 @@ export async function registerAction(
 ): Promise<string | null> {
   const parsed = RegistrationSchema.safeParse({
     email: formData.get("email"),
+    username: formData.get("username"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   });
