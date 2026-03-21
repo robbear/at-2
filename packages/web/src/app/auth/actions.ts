@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn, signOut } from "../../auth.js";
+import { signIn, signOut } from "../../auth";
 import { RegistrationSchema, PasswordResetRequestSchema, PasswordResetSchema } from "@at-2/shared";
 import { redirect } from "next/navigation";
 import { AuthError, CredentialsSignin } from "next-auth";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { registerAction } from "../actions.js";
+import { registerAction } from "../actions";
 import type { ReactNode } from "react";
 
 export default function RegisterPage(): ReactNode {

@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signInAction } from "../actions.js";
+import { signInAction } from "../actions";
 import type { ReactNode } from "react";
 
 function errorMessage(code: string | null): string {
@@ -15,7 +16,7 @@ function errorMessage(code: string | null): string {
   return "Sign in failed. Please check your credentials.";
 }
 
-export default function SignInPage(): ReactNode {
+function SignInForm(): ReactNode {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
   const urlCode = searchParams.get("code");
@@ -62,5 +63,13 @@ export default function SignInPage(): ReactNode {
         <a href="/auth/reset">{noPasswordError ? "Set a password" : "Forgot password?"}</a>
       </p>
     </main>
+  );
+}
+
+export default function SignInPage(): ReactNode {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   );
 }

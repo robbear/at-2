@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { resetPasswordAction } from "../../actions.js";
+import { resetPasswordAction } from "../../actions";
 import type { ReactNode } from "react";
 
-export default function ResetConfirmPage(): ReactNode {
+function ResetConfirmForm(): ReactNode {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
@@ -30,5 +31,13 @@ export default function ResetConfirmPage(): ReactNode {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function ResetConfirmPage(): ReactNode {
+  return (
+    <Suspense>
+      <ResetConfirmForm />
+    </Suspense>
   );
 }
