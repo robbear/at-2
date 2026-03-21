@@ -1,4 +1,4 @@
-import { verifyEmailAction } from "../actions.js";
+import { verifyEmailAction } from "../actions";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 

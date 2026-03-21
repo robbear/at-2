@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { resetRequestAction } from "../actions.js";
+import { resetRequestAction } from "../actions";
 import type { ReactNode } from "react";
 
 export default function ResetPage(): ReactNode {
