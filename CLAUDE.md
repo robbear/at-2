@@ -118,6 +118,20 @@ per context.
 - `MONGODB_URI_TEST` — same cluster connection string. Passed explicitly to `connectDb()`
   in test `beforeAll` hooks. Set as a GitHub Actions secret. Never used by `server.ts`.
 
+### Local dev env loading
+
+A single `.env.local` at the **repo root** is the source of truth for all local
+dev environment variables. Both packages load it automatically:
+
+- `packages/api` — loaded via `dotenv` at the top of `server.ts` before
+  `parseEnv()` runs (non-production only).
+- `packages/web` — loaded via `node --env-file-if-exists=../../.env.local` in
+  the `dev` script before Next.js starts.
+
+Copy `.env.local.example` to `.env.local` at the repo root and fill in values.
+Do **not** create per-package `.env.local` files — they are gitignored but
+serve no purpose and will cause confusion.
+
 ### Rules
 
 - Test code must never reference `MONGODB_URI` — only `MONGODB_URI_TEST`
