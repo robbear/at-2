@@ -42,6 +42,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Next.js
+next-env.d.ts
+
 # Vercel
 .vercel
 
