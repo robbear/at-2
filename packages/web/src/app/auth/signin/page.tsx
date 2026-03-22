@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useFormStatus } from "react-dom";
 import { signInAction } from "../actions";
 import type { ReactNode } from "react";
 
@@ -16,34 +16,29 @@ function errorMessage(code: string | null): string {
   return "Sign in failed. Please check your credentials.";
 }
 
+function SubmitButton(): ReactNode {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? "Signing in…" : "Sign in"}
+    </button>
+  );
+}
+
 function SignInForm(): ReactNode {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
   const urlCode = searchParams.get("code");
 
-  const [actionError, dispatch, pending] = useActionState<string | null, FormData>(
-    async (_prev, formData) => {
-      try {
-        await signInAction(formData);
-        return null;
-      } catch {
-        return "Sign in failed. Please check your credentials.";
-      }
-    },
-    null
-  );
-
-  // URL error params come from server-side redirects (e.g. CredentialsSignin with code)
   const displayError =
-    actionError ??
-    (urlError === "CredentialsSignin" ? errorMessage(urlCode) : null);
+    urlError === "CredentialsSignin" ? errorMessage(urlCode) : null;
 
   const noPasswordError = urlError === "CredentialsSignin" && urlCode === "NO_PASSWORD";
 
   return (
     <main>
       <h1>Sign in</h1>
-      <form action={dispatch}>
+      <form action={signInAction}>
         <div>
           <label htmlFor="email">Email</label>
           <input id="email" name="email" type="email" required autoComplete="email" />
@@ -53,9 +48,7 @@ function SignInForm(): ReactNode {
           <input id="password" name="password" type="password" required autoComplete="current-password" />
         </div>
         {displayError && <p role="alert">{displayError}</p>}
-        <button type="submit" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
-        </button>
+        <SubmitButton />
       </form>
       <p>
         <a href="/auth/register">Create an account</a>
