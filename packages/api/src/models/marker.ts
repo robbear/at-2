@@ -9,11 +9,11 @@ const markerSchema = new Schema<MarkerDoc>(
     _id: { type: String, required: true }, // {userId}/{timestamp}
     userId: { type: String, required: true, index: true },
     title: { type: String, required: true },
-    snippetText: { type: String, required: true, default: "" },
-    snippetImage: { type: String, required: true, default: "" },
-    contentUrl: { type: String, required: true, default: "" },
-    markdown: { type: String, required: true, default: "" },
-    tags: { type: [String], required: true, default: [], index: true },
+    snippetText: { type: String, default: "" },
+    snippetImage: { type: String, default: "" },
+    contentUrl: { type: String, default: "" },
+    markdown: { type: String, default: "" },
+    tags: { type: [String], default: [], index: true },
     location: {
       type: {
         type: String,
