@@ -7,6 +7,7 @@ const COOKIE_NAME = "atlasphere.session-token";
 export interface SessionUser {
   id: string;
   email: string;
+  userId: string; // public handle (e.g. "robbearman")
 }
 
 declare module "fastify" {
@@ -42,7 +43,7 @@ export async function requireAuth(
       salt: COOKIE_NAME,
     });
 
-    if (!payload?.sub || !payload.email) {
+    if (!payload?.sub || !payload.email || !payload.userId) {
       await reply.status(401).send({ error: "Unauthorized" });
       return;
     }
@@ -50,6 +51,7 @@ export async function requireAuth(
     request.user = {
       id: payload.sub,
       email: payload.email as string,
+      userId: payload.userId as string,
     };
   } catch {
     await reply.status(401).send({ error: "Unauthorized" });

@@ -27,6 +27,12 @@ export default defineConfig({
       MONGODB_URI: "mongodb://localhost:27017/atlasphere-test",
       MONGODB_DB_NAME: "atlasphere-v2-test",
       AUTH_SECRET: "test-secret-do-not-use-in-production-must-be-32-chars",
+      // R2 vars needed because parseEnv() runs at startup; S3 calls are mocked in tests.
+      R2_ACCOUNT_ID: "test-r2-account-id",
+      R2_ACCESS_KEY_ID: "test-r2-access-key-id",
+      R2_SECRET_ACCESS_KEY: "test-r2-secret-access-key",
+      R2_BUCKET_NAME: "test-bucket",
+      R2_PUBLIC_URL: "https://test-r2.example.com",
     },
   },
 });

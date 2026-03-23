@@ -42,6 +42,7 @@ export async function credentialsRoute(app: FastifyInstance): Promise<void> {
       id: profile._id,
       email: profile.email,
       name: profile.name,
+      userId: profile.userId,
     });
   });
 }
