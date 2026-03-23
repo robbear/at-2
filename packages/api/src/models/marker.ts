@@ -38,8 +38,6 @@ const markerSchema = new Schema<MarkerDoc>(
     deleted: { type: Boolean, required: true, default: false },
   },
   {
-    // _id is managed by us (string), not Mongoose's ObjectId
-    _id: false,
     versionKey: false,
     toJSON: {
       transform(_, ret: Record<string, unknown>) {
