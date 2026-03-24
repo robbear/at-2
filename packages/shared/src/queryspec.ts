@@ -7,8 +7,8 @@ export const NearSchema = z.object({
 });
 
 export const DateRangeSchema = z.object({
-  start: z.string(), // ISO date string
-  end: z.string(), // ISO date string
+  start: z.string().optional(), // ISO date string
+  end: z.string().optional(), // ISO date string
   usePosttime: z.boolean().default(false),
 });
 

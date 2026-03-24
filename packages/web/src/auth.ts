@@ -34,8 +34,8 @@ const config: NextAuthConfig = {
           return null;
         }
 
-        const user = (await res.json()) as { id: string; email: string; name: string };
-        return { id: user.id, email: user.email, name: user.name };
+        const user = (await res.json()) as { id: string; email: string; name: string; userId: string };
+        return { id: user.id, email: user.email, name: user.name, userId: user.userId };
       },
     }),
   ],
@@ -56,6 +56,7 @@ const config: NextAuthConfig = {
         token.sub = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.userId = (user as { userId?: string }).userId;
       }
       return token;
     },

@@ -2,6 +2,9 @@ import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { healthRoutes } from "./routes/health.js";
 import { authRoutes } from "./routes/auth.js";
+import { markersRoutes } from "./routes/markers.js";
+import { profilesRoutes } from "./routes/profiles.js";
+import { uploadRoutes } from "./routes/upload.js";
 import { requireAuth } from "./middleware/auth.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -11,6 +14,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(markersRoutes);
+  await app.register(profilesRoutes);
+  await app.register(uploadRoutes);
 
   // Test-only protected route for verifying auth middleware
   if (process.env["NODE_ENV"] === "test") {
