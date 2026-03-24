@@ -184,7 +184,16 @@ async function migrateProfiles(
 
     await v2Col.updateOne(
       { userId: doc.userId },
-      { $set: v2Doc },
+      {
+        $set: {
+          userId: v2Doc.userId,
+          email: v2Doc.email,
+          name: v2Doc.name,
+          emailVerified: v2Doc.emailVerified,
+          createdAt: v2Doc.createdAt,
+        },
+        $setOnInsert: { _id: v2Doc._id },
+      },
       { upsert: true },
     );
 
@@ -248,7 +257,13 @@ async function migrateMarkers(
       ...(doc.markerColors !== undefined && { markerColors: doc.markerColors }),
     };
 
-    await v2Col.updateOne({ _id: markerId }, { $set: v2Doc }, { upsert: true });
+    const { _id: _omit, ...markerFields } = v2Doc;
+
+    await v2Col.updateOne(
+      { _id: markerId },
+      { $set: markerFields },
+      { upsert: true }
+    );
 
     if (processed % BATCH_SIZE === 0 || processed === total) {
       console.log(`  Processed ${processed} / ${total}`);
