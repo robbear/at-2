@@ -8,8 +8,8 @@ import {
   AdvancedMarker,
   useMap,
 } from "@vis.gl/react-google-maps";
-import { BaseMarker } from "./BaseMarker.js";
-import type { MapProps } from "./types.js";
+import { BaseMarker } from "./BaseMarker";
+import type { MapProps } from "./types";
 
 interface IdleSyncProps {
   onMove?: (center: { lat: number; lng: number }, zoom: number) => void;

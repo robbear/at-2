@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import type { ReactElement } from "react";
 import type { Marker } from "@at-2/shared";
-import { MapView } from "./map-view.js";
-import type { MarkerDot } from "@/components/maps/types.js";
+import { MapView } from "./map-view";
+import type { MarkerDot } from "@/components/maps/types";
 
 async function fetchMarkers(): Promise<Marker[]> {
   const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";

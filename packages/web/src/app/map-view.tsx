@@ -4,13 +4,13 @@ import { useCallback, startTransition } from "react";
 import type { ReactElement } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { selectProvider } from "@/lib/map/provider-select.js";
-import type { MapProps, MarkerDot } from "@/components/maps/types.js";
+import { selectProvider } from "@/lib/map/provider-select";
+import type { MapProps, MarkerDot } from "@/components/maps/types";
 
 // Loaded with ssr:false — mapbox-gl and Google Maps require a browser environment.
 const MapboxMap = dynamic<MapProps>(
   () =>
-    import("@/components/maps/MapboxMap.js").then((m) => ({
+    import("@/components/maps/MapboxMap").then((m) => ({
       default: m.MapboxMap,
     })),
   { ssr: false },
@@ -18,7 +18,7 @@ const MapboxMap = dynamic<MapProps>(
 
 const GoogleMap = dynamic<MapProps>(
   () =>
-    import("@/components/maps/GoogleMap.js").then((m) => ({
+    import("@/components/maps/GoogleMap").then((m) => ({
       default: m.GoogleMap,
     })),
   { ssr: false },

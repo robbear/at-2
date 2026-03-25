@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { selectProvider } from "./provider-select.js";
+import { selectProvider } from "./provider-select";
 
 describe("selectProvider", () => {
   it("returns google when override is 'google'", () => {

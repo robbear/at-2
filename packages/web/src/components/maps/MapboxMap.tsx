@@ -5,8 +5,8 @@ import type { ReactElement } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import type { ViewStateChangeEvent } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { BaseMarker } from "./BaseMarker.js";
-import type { MapProps } from "./types.js";
+import { BaseMarker } from "./BaseMarker";
+import type { MapProps } from "./types";
 
 export function MapboxMap({
   center,
