@@ -63,6 +63,30 @@ Standard Auth.js routes — do not customize paths.
 
 ---
 
+## Viewport params
+
+```
+/?lat={latitude}&lng={longitude}&zoom={zoom}
+```
+
+Encode the current map viewport so any view is shareable as a URL.
+
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `lat` | `number` | `33.8337` | Map center latitude |
+| `lng` | `number` | `-60.8509` | Map center longitude |
+| `zoom` | `number` | `2` | Map zoom level |
+
+Defaults can be overridden by the `DEFAULT_LAT`, `DEFAULT_LNG`, and `DEFAULT_ZOOM`
+env vars. Combine freely with QuerySpec params and `?mp=`.
+
+Example:
+```
+/?lat=37.3861&lng=-122.0839&zoom=10&userIds=robbearman&mp=1
+```
+
+---
+
 ## Map provider param
 
 ```

@@ -13,7 +13,6 @@
  * Safe to re-run: uses upsert, will not duplicate data.
  */
 
-import { createRequire } from "module";
 import { randomUUID } from "crypto";
 import { readFileSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
