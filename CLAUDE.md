@@ -320,6 +320,36 @@ src/components/
 
 ---
 
+## Deployment environments
+
+### Railway (API)
+
+Railway deploys `packages/api`. Two contexts:
+
+- **Production** — deploys on merge to `main`. `RAILWAY_ENVIRONMENT_NAME=production`.
+- **PR environments** — auto-created on PR open, auto-deleted on PR close.
+  `RAILWAY_ENVIRONMENT_NAME` is set to a PR-based name (e.g. `pr-42`).
+
+Environment-specific variables (`MONGODB_DB_NAME`, `R2_BUCKET_NAME`,
+`R2_PUBLIC_URL`) are resolved automatically via `RAILWAY_ENV_DEFAULTS` in
+`env.ts`. See `/docs/railway-environments.md` for full details and how to add
+new environment-specific variables.
+
+Railway production URL: `https://at-2api-production.up.railway.app`
+
+### Vercel (web)
+
+Vercel deploys `packages/web`. Two contexts:
+
+- **Production** — deploys on merge to `main`. `API_URL` points at Railway production.
+- **Preview** — deploys on PR open. `API_URL` injected by Railway's Vercel
+  integration, pointing at the Railway PR environment URL.
+
+Current production domain: `at-2-two.vercel.app` (temporary until DNS cutover
+to `atlasphere.app`).
+
+---
+
 ## Docs index
 
 | File | Contents |
@@ -330,3 +360,4 @@ src/components/
 | `/docs/auth-flow.md` | Auth.js setup, session handling, registration gate |
 | `/docs/storage.md` | R2 bucket layout and presigned upload flow |
 | `/docs/map-providers.md` | Provider switching, quota tracking, alerting |
+| `/docs/railway-environments.md` | Railway deployment contexts, env-specific variable resolution |
