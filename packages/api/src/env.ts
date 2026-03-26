@@ -2,6 +2,7 @@ import { z } from "zod";
 
 /**
  * Variables that resolve differently on Railway production vs PR environments.
+ * IMPORTANT: Read docs/railway-environments.md.
  *
  * To add a new environment-specific variable:
  *   1. Add an entry here with production and dev values.
