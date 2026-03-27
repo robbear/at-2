@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthConfig, CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { CredentialsSchema } from "@at-2/shared";
+import { getApiUrl } from "@/lib/api-url";
 
 class AuthError extends CredentialsSignin {
   constructor(public code: string) {
@@ -20,8 +21,7 @@ const config: NextAuthConfig = {
         const parsed = CredentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-        const res = await fetch(`${apiUrl}/api/v1/auth/credentials`, {
+        const res = await fetch(`${getApiUrl()}/api/v1/auth/credentials`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(parsed.data),
