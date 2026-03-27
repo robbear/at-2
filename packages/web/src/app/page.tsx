@@ -3,10 +3,10 @@ import type { ReactElement } from "react";
 import type { Marker } from "@at-2/shared";
 import { MapView } from "./map-view";
 import type { MarkerDot } from "@/components/maps/types";
+import { getApiUrl } from "@/lib/api-url";
 
 async function fetchMarkers(): Promise<Marker[]> {
-  const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-  const url = new URL(`${apiUrl}/api/v1/markers`);
+  const url = new URL(`${getApiUrl()}/api/v1/markers`);
 
   const defaultUserIds = process.env["DEFAULT_QUERY_USERIDS"];
   const defaultTags = process.env["DEFAULT_QUERY_TAGS"];

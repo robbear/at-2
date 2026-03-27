@@ -2,6 +2,7 @@
 
 import { signIn, signOut } from "../../auth";
 import { RegistrationSchema, PasswordResetRequestSchema, PasswordResetSchema } from "@at-2/shared";
+import { getApiUrl } from "@/lib/api-url";
 import { redirect } from "next/navigation";
 import { AuthError, CredentialsSignin } from "next-auth";
 
@@ -43,8 +44,7 @@ export async function registerAction(
     return parsed.error.issues[0]?.message ?? "Invalid input";
   }
 
-  const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-  const res = await fetch(`${apiUrl}/api/v1/auth/register`, {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(parsed.data),
@@ -70,8 +70,7 @@ export async function resetRequestAction(
     return parsed.error.issues[0]?.message ?? "Invalid email";
   }
 
-  const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-  await fetch(`${apiUrl}/api/v1/auth/reset-request`, {
+  await fetch(`${getApiUrl()}/api/v1/auth/reset-request`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(parsed.data),
@@ -94,8 +93,7 @@ export async function resetPasswordAction(
     return parsed.error.issues[0]?.message ?? "Invalid input";
   }
 
-  const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-  const res = await fetch(`${apiUrl}/api/v1/auth/reset`, {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(parsed.data),
@@ -110,8 +108,7 @@ export async function resetPasswordAction(
 }
 
 export async function verifyEmailAction(token: string): Promise<string | null> {
-  const apiUrl = process.env["API_URL"] ?? "http://localhost:3001";
-  const res = await fetch(`${apiUrl}/api/v1/auth/verify-email`, {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/verify-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
