@@ -51,6 +51,7 @@ production Railway URL. In this case:
 |---|---|
 | `VERCEL_TOKEN` | Vercel API authentication |
 | `VERCEL_PROJECT_ID` | Identifies the Vercel project to update |
+| `AT_2_ENV_TOKEN` | Railway API account token |
 
 Add these to the repository under **Settings → Secrets and variables → Actions**.
 
@@ -60,9 +61,7 @@ How to obtain each:
 |---|---|
 | `VERCEL_TOKEN` | Vercel dashboard → Settings → Tokens → Create token |
 | `VERCEL_PROJECT_ID` | Vercel project → Settings → General → Project ID |
-
-Note: `RAILWAY_API_TOKEN` is **not** needed — the Railway PR domain comes
-directly from `github.event.deployment_status.environment_url`.
+| `AT_2_ENV_TOKEN` | Railway account → Settings → Tokens → New Token |
 
 ---
 
