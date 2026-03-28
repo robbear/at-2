@@ -337,6 +337,15 @@ new environment-specific variables.
 
 Railway production URL: `https://at-2api-production.up.railway.app`
 
+#### PR API URL injection
+
+When a Railway PR environment deploys successfully,
+`.github/workflows/railway-post-deploy.yml` automatically injects the Railway
+PR API URL into Vercel as a branch-scoped `API_URL` env var and triggers a
+Vercel redeploy.
+
+See `/docs/pr-preview-flow.md` for the full flow.
+
 ### Vercel (web)
 
 Vercel deploys `packages/web`. Two contexts:
@@ -361,3 +370,4 @@ to `atlasphere.app`).
 | `/docs/storage.md` | R2 bucket layout and presigned upload flow |
 | `/docs/map-providers.md` | Provider switching, quota tracking, alerting |
 | `/docs/railway-environments.md` | Railway deployment contexts, env-specific variable resolution |
+| `/docs/pr-preview-flow.md` | PR preview environment flow, Railway→Vercel API URL injection |
