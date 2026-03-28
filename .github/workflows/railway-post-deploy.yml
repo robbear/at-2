@@ -59,19 +59,39 @@ jobs:
 
           echo "Setting API_URL=$API_URL for branch $BRANCH in Vercel..."
 
-          # Create or update a branch-scoped environment variable in Vercel
-          # Uses the Vercel API: POST /v10/projects/{projectId}/env
-          curl -s -X POST \
-            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"key\": \"API_URL\",
-              \"value\": \"$API_URL\",
-              \"type\": \"plain\",
-              \"target\": [\"preview\"],
-              \"gitBranch\": \"$BRANCH\"
-            }" | jq '.'
+          # URL-encode the branch name (handles slashes in e.g. feat/my-branch)
+          BRANCH_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$BRANCH', safe=''))")
+
+          # Check whether a branch-scoped API_URL already exists for this branch.
+          # POST would return ENV_ALREADY_EXISTS (400) on a second Railway deploy,
+          # so we upsert: PATCH if found, POST if not.
+          ENV_ID=$(curl -s \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?gitBranch=$BRANCH_ENCODED" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | \
+            jq -r ".envs[] | select(.key == \"API_URL\" and .gitBranch == \"$BRANCH\") | .id" | \
+            head -1)
+
+          if [ -n "$ENV_ID" ]; then
+            echo "Updating existing env var $ENV_ID..."
+            curl -s -X PATCH \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$ENV_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"value\": \"$API_URL\"}" | jq '.'
+          else
+            echo "Creating new env var..."
+            curl -s -X POST \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"API_URL\",
+                \"value\": \"$API_URL\",
+                \"type\": \"plain\",
+                \"target\": [\"preview\"],
+                \"gitBranch\": \"$BRANCH\"
+              }" | jq '.'
+          fi
 
       - name: Trigger Vercel redeploy for this branch
         env:
