@@ -4,26 +4,36 @@ on:
   deployment_status:
 
 jobs:
+  # Always-on job: logs every deployment_status event so we can inspect what
+  # Railway (and Vercel) actually send without the main job's if-guard hiding it.
+  debug-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print deployment_status event
+        run: |
+          echo "=== deployment_status event ==="
+          echo "state:           ${{ github.event.deployment_status.state }}"
+          echo "environment:     ${{ github.event.deployment.environment }}"
+          echo "ref:             ${{ github.event.deployment.ref }}"
+          echo "environment_url: ${{ github.event.deployment_status.environment_url }}"
+          echo "creator login:   ${{ github.event.deployment.creator.login }}"
+          echo "--- full event payload ---"
+          echo '${{ toJSON(github.event) }}'
+
   inject-api-url:
     runs-on: ubuntu-latest
     # Only run when:
     # - The deployment succeeded
     # - It is NOT the production environment (i.e. it's a Railway PR environment)
-    # - It has a branch ref (not a tag)
+    #
+    # NOTE: the ref check (startsWith ref 'refs/heads/') was removed because
+    # Railway sets ref to the bare branch name (e.g. "feat/my-branch"), not the
+    # full git ref format. The branch-extraction step already handles both forms.
     if: |
       github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment != 'production' &&
-      startsWith(github.event.deployment.ref, 'refs/heads/')
+      github.event.deployment.environment != 'production'
 
     steps:
-      - name: Debug — print deployment event
-        run: |
-          echo "Deployment environment: ${{ github.event.deployment.environment }}"
-          echo "Deployment ref: ${{ github.event.deployment.ref }}"
-          echo "Environment URL: ${{ github.event.deployment_status.environment_url }}"
-          echo "Full event:"
-          echo '${{ toJSON(github.event) }}'
-
       - name: Extract Railway PR domain
         id: railway
         run: |
@@ -43,7 +53,9 @@ jobs:
       - name: Extract branch name
         id: branch
         run: |
-          # deployment.ref is e.g. "refs/heads/feat/my-branch"
+          # deployment.ref may be "refs/heads/feat/my-branch" or the bare branch
+          # name "feat/my-branch" depending on the deployer — strip the prefix if
+          # present, leave it unchanged if not.
           BRANCH="${{ github.event.deployment.ref }}"
           BRANCH="${BRANCH#refs/heads/}"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
