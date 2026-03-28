@@ -1,3 +1,4 @@
+// Force Railway redeploy
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { healthRoutes } from "./routes/health.js";
