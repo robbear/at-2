@@ -1,4 +1,4 @@
-// PR test comment mod 2
+// PR test comment mod 3
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { healthRoutes } from "./routes/health.js";
