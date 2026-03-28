@@ -1,0 +1,125 @@
+name: Inject Railway PR URL into Vercel
+
+on:
+  deployment_status:
+
+jobs:
+  inject-api-url:
+    runs-on: ubuntu-latest
+    # Only run when:
+    # - The deployment succeeded
+    # - It is NOT the production environment (i.e. it's a Railway PR environment)
+    # - It has a branch ref (not a tag)
+    if: |
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'production' &&
+      startsWith(github.event.deployment.ref, 'refs/heads/')
+
+    steps:
+      - name: Debug — print deployment event
+        run: |
+          echo "Deployment environment: ${{ github.event.deployment.environment }}"
+          echo "Deployment ref: ${{ github.event.deployment.ref }}"
+          echo "Environment URL: ${{ github.event.deployment_status.environment_url }}"
+          echo "Full event:"
+          echo '${{ toJSON(github.event) }}'
+
+      - name: Extract Railway PR domain
+        id: railway
+        run: |
+          # environment_url from Railway includes the full URL e.g. https://at-2api-pr-42.up.railway.app/
+          ENVIRONMENT_URL="${{ github.event.deployment_status.environment_url }}"
+          if [ -z "$ENVIRONMENT_URL" ]; then
+            echo "No environment_url found in deployment_status event. Exiting."
+            exit 1
+          fi
+          # Ensure it has a protocol prefix
+          if [[ "$ENVIRONMENT_URL" != https://* && "$ENVIRONMENT_URL" != http://* ]]; then
+            ENVIRONMENT_URL="https://$ENVIRONMENT_URL"
+          fi
+          echo "api_url=$ENVIRONMENT_URL" >> $GITHUB_OUTPUT
+          echo "Resolved API_URL: $ENVIRONMENT_URL"
+
+      - name: Extract branch name
+        id: branch
+        run: |
+          # deployment.ref is e.g. "refs/heads/feat/my-branch"
+          BRANCH="${{ github.event.deployment.ref }}"
+          BRANCH="${BRANCH#refs/heads/}"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH"
+
+      - name: Set API_URL in Vercel for this branch
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          API_URL="${{ steps.railway.outputs.api_url }}"
+
+          echo "Setting API_URL=$API_URL for branch $BRANCH in Vercel..."
+
+          # URL-encode the branch name (handles slashes in e.g. feat/my-branch)
+          BRANCH_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$BRANCH', safe=''))")
+
+          # Check whether a branch-scoped API_URL already exists for this branch.
+          # POST would return ENV_ALREADY_EXISTS (400) on a second Railway deploy,
+          # so we upsert: PATCH if found, POST if not.
+          ENV_ID=$(curl -s \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?gitBranch=$BRANCH_ENCODED" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | \
+            jq -r ".envs[] | select(.key == \"API_URL\" and .gitBranch == \"$BRANCH\") | .id" | \
+            head -1)
+
+          if [ -n "$ENV_ID" ]; then
+            echo "Updating existing env var $ENV_ID..."
+            curl -s -X PATCH \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$ENV_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"value\": \"$API_URL\"}" | jq '.'
+          else
+            echo "Creating new env var..."
+            curl -s -X POST \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"API_URL\",
+                \"value\": \"$API_URL\",
+                \"type\": \"plain\",
+                \"target\": [\"preview\"],
+                \"gitBranch\": \"$BRANCH\"
+              }" | jq '.'
+          fi
+
+      - name: Trigger Vercel redeploy for this branch
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          echo "Fetching latest Vercel deployment for branch $BRANCH..."
+
+          # Find the most recent Vercel deployment for this branch
+          DEPLOYMENT=$(curl -s \
+            "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&target=preview&limit=10" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | \
+            jq -r ".deployments[] | select(.meta.githubCommitRef == \"$BRANCH\") | .uid" | \
+            head -1)
+
+          if [ -z "$DEPLOYMENT" ]; then
+            echo "No Vercel deployment found for branch $BRANCH. Skipping redeploy."
+            exit 0
+          fi
+
+          echo "Redeploying Vercel deployment $DEPLOYMENT..."
+
+          curl -s -X POST \
+            "https://api.vercel.com/v13/deployments?forceNew=1" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"deploymentId\": \"$DEPLOYMENT\",
+              \"target\": \"preview\"
+            }" | jq '.'
