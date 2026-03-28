@@ -3,6 +3,9 @@ name: Inject Railway PR URL into Vercel
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 jobs:
   # Always-on job: logs every deployment_status event so we can inspect what
   # Railway (and Vercel) actually send without the main job's if-guard hiding it.
@@ -25,19 +28,19 @@ jobs:
     # Only run when:
     # - The deployment succeeded
     # - It is NOT the production environment (i.e. it's a Railway PR environment)
-    #
-    # NOTE: the ref check (startsWith ref 'refs/heads/') was removed because
-    # Railway sets ref to the bare branch name (e.g. "feat/my-branch"), not the
-    # full git ref format. The branch-extraction step already handles both forms.
+    # - The environment_url is a Railway URL — filters out Vercel's own
+    #   deployment_status events, which also fire on every PR push and would
+    #   otherwise pass the other two conditions
     if: |
       github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment != 'production'
+      github.event.deployment.environment != 'production' &&
+      contains(github.event.deployment_status.environment_url, 'railway.app')
 
     steps:
       - name: Extract Railway PR domain
         id: railway
         run: |
-          # environment_url from Railway includes the full URL e.g. https://at-2api-pr-42.up.railway.app/
+          # environment_url from Railway e.g. https://at-2api-pr-42.up.railway.app/
           ENVIRONMENT_URL="${{ github.event.deployment_status.environment_url }}"
           if [ -z "$ENVIRONMENT_URL" ]; then
             echo "No environment_url found in deployment_status event. Exiting."
@@ -52,12 +55,29 @@ jobs:
 
       - name: Extract branch name
         id: branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # deployment.ref may be "refs/heads/feat/my-branch" or the bare branch
-          # name "feat/my-branch" depending on the deployer — strip the prefix if
-          # present, leave it unchanged if not.
-          BRANCH="${{ github.event.deployment.ref }}"
-          BRANCH="${BRANCH#refs/heads/}"
+          REF="${{ github.event.deployment.ref }}"
+
+          # Railway sets ref to the commit SHA (40 hex chars), not the branch name.
+          # Resolve it to a branch name via the GitHub API when that's the case.
+          if echo "$REF" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "ref is a commit SHA — resolving to branch name via GitHub API..."
+            BRANCH=$(curl -s \
+              "https://api.github.com/repos/${{ github.repository }}/commits/$REF/branches-where-head" \
+              -H "Authorization: Bearer $GH_TOKEN" | \
+              jq -r '.[0].name // empty')
+            if [ -z "$BRANCH" ]; then
+              echo "Could not resolve branch name from SHA $REF. Exiting."
+              exit 1
+            fi
+          else
+            # Bare branch name or refs/heads/ prefix — strip prefix if present
+            BRANCH="$REF"
+            BRANCH="${BRANCH#refs/heads/}"
+          fi
+
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "Branch: $BRANCH"
 
