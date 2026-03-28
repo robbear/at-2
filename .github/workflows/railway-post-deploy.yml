@@ -52,15 +52,25 @@ jobs:
           print(ids[0] if ids else '')
           ")
 
-          if [ -z "$ENVIRONMENT_ID" ]; then
-            echo "Could not extract environmentId from: $ENVIRONMENT_URL"
+          # Project ID is the last path segment of the dashboard URL
+          PROJECT_ID=$(python3 -c "
+          from urllib.parse import urlparse
+          print(urlparse('$ENVIRONMENT_URL').path.rstrip('/').split('/')[-1])
+          ")
+
+          if [ -z "$ENVIRONMENT_ID" ] || [ -z "$PROJECT_ID" ]; then
+            echo "Could not extract IDs from: $ENVIRONMENT_URL"
+            echo "  projectId:     $PROJECT_ID"
+            echo "  environmentId: $ENVIRONMENT_ID"
             exit 1
           fi
+          echo "projectId:     $PROJECT_ID"
           echo "environmentId: $ENVIRONMENT_ID"
 
-          # Build the GraphQL request body (jq handles JSON escaping)
-          BODY=$(jq -n --arg envId "$ENVIRONMENT_ID" \
-            '{"query": ("query { deployments(input: { environmentId: \"" + $envId + "\" }) { edges { node { staticUrl url status } } } }")}')
+          # Build the GraphQL request body (jq handles JSON escaping).
+          # Include projectId — some token types require it alongside environmentId.
+          BODY=$(jq -n --arg projectId "$PROJECT_ID" --arg envId "$ENVIRONMENT_ID" \
+            '{"query": ("query { deployments(input: { projectId: \"" + $projectId + "\", environmentId: \"" + $envId + "\" }) { edges { node { staticUrl url status } } } }")}')
 
           RAILWAY_RESPONSE=$(curl -s -X POST \
             "https://backboard.railway.app/graphql/v2" \
