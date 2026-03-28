@@ -7,8 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  # Always-on job: logs every deployment_status event so we can inspect what
-  # Railway (and Vercel) actually send without the main job's if-guard hiding it.
+  # Always-on job: logs every deployment_status event for debugging.
   debug-event:
     runs-on: ubuntu-latest
     steps:
@@ -25,33 +24,70 @@ jobs:
 
   inject-api-url:
     runs-on: ubuntu-latest
-    # Only run when:
-    # - The deployment succeeded
-    # - It is NOT the production environment (i.e. it's a Railway PR environment)
-    # - The environment_url is a Railway URL — filters out Vercel's own
-    #   deployment_status events, which also fire on every PR push and would
-    #   otherwise pass the other two conditions
+    # Run only for Railway PR deployments:
+    # - creator is railway-app[bot]                    (filters out Vercel's own events)
+    # - state is success                               (filters out the in_progress event)
+    # - environment does not contain 'production'      (skip production deploys)
     if: |
+      github.event.deployment.creator.login == 'railway-app[bot]' &&
       github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment != 'production' &&
-      contains(github.event.deployment_status.environment_url, 'railway.app')
+      !contains(github.event.deployment.environment, 'production')
 
     steps:
-      - name: Extract Railway PR domain
+      - name: Fetch Railway service URL via GraphQL API
         id: railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.AT_2_ENV_TOKEN }}
         run: |
-          # environment_url from Railway e.g. https://at-2api-pr-42.up.railway.app/
+          # The deployment environment_url is the Railway dashboard page, not the
+          # service URL. Extract the environmentId from its query string and query
+          # the Railway GraphQL API for the actual service domain.
           ENVIRONMENT_URL="${{ github.event.deployment_status.environment_url }}"
-          if [ -z "$ENVIRONMENT_URL" ]; then
-            echo "No environment_url found in deployment_status event. Exiting."
+          echo "Dashboard URL: $ENVIRONMENT_URL"
+
+          ENVIRONMENT_ID=$(python3 -c "
+          from urllib.parse import urlparse, parse_qs
+          qs = parse_qs(urlparse('$ENVIRONMENT_URL').query)
+          ids = qs.get('environmentId', [])
+          print(ids[0] if ids else '')
+          ")
+
+          if [ -z "$ENVIRONMENT_ID" ]; then
+            echo "Could not extract environmentId from: $ENVIRONMENT_URL"
             exit 1
           fi
-          # Ensure it has a protocol prefix
-          if [[ "$ENVIRONMENT_URL" != https://* && "$ENVIRONMENT_URL" != http://* ]]; then
-            ENVIRONMENT_URL="https://$ENVIRONMENT_URL"
+          echo "environmentId: $ENVIRONMENT_ID"
+
+          # Build the GraphQL request body (jq handles JSON escaping)
+          BODY=$(jq -n --arg envId "$ENVIRONMENT_ID" \
+            '{"query": ("query { deployments(input: { environmentId: \"" + $envId + "\" }) { edges { node { staticUrl url status } } } }")}')
+
+          RAILWAY_RESPONSE=$(curl -s -X POST \
+            "https://backboard.railway.app/graphql/v2" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$BODY")
+
+          echo "Railway API response:"
+          echo "$RAILWAY_RESPONSE" | jq '.'
+
+          # staticUrl is the Railway-assigned service domain (no https:// prefix).
+          # Fall back to url if staticUrl is absent.
+          API_URL=$(echo "$RAILWAY_RESPONSE" | \
+            jq -r '[.data.deployments.edges[].node | select(.status == "SUCCESS") | (.staticUrl // .url)] | first // empty')
+
+          if [ -z "$API_URL" ]; then
+            echo "Could not extract service URL from Railway API response. Exiting."
+            exit 1
           fi
-          echo "api_url=$ENVIRONMENT_URL" >> $GITHUB_OUTPUT
-          echo "Resolved API_URL: $ENVIRONMENT_URL"
+
+          # Ensure https:// prefix
+          if [[ "$API_URL" != https://* && "$API_URL" != http://* ]]; then
+            API_URL="https://$API_URL"
+          fi
+
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "Resolved API_URL: $API_URL"
 
       - name: Extract branch name
         id: branch
@@ -61,7 +97,6 @@ jobs:
           REF="${{ github.event.deployment.ref }}"
 
           # Railway sets ref to the commit SHA (40 hex chars), not the branch name.
-          # Resolve it to a branch name via the GitHub API when that's the case.
           if echo "$REF" | grep -qE '^[0-9a-f]{40}$'; then
             echo "ref is a commit SHA — resolving to branch name via GitHub API..."
             BRANCH=$(curl -s \
@@ -73,7 +108,6 @@ jobs:
               exit 1
             fi
           else
-            # Bare branch name or refs/heads/ prefix — strip prefix if present
             BRANCH="$REF"
             BRANCH="${BRANCH#refs/heads/}"
           fi
@@ -94,9 +128,8 @@ jobs:
           # URL-encode the branch name (handles slashes in e.g. feat/my-branch)
           BRANCH_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$BRANCH', safe=''))")
 
-          # Check whether a branch-scoped API_URL already exists for this branch.
-          # POST would return ENV_ALREADY_EXISTS (400) on a second Railway deploy,
-          # so we upsert: PATCH if found, POST if not.
+          # Upsert: PATCH if the variable already exists, POST if not.
+          # POST returns ENV_ALREADY_EXISTS (400) on a second Railway deploy.
           ENV_ID=$(curl -s \
             "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?gitBranch=$BRANCH_ENCODED" \
             -H "Authorization: Bearer $VERCEL_TOKEN" | \
@@ -133,7 +166,6 @@ jobs:
           BRANCH="${{ steps.branch.outputs.branch }}"
           echo "Fetching latest Vercel deployment for branch $BRANCH..."
 
-          # Find the most recent Vercel deployment for this branch
           DEPLOYMENT=$(curl -s \
             "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&target=preview&limit=10" \
             -H "Authorization: Bearer $VERCEL_TOKEN" | \
