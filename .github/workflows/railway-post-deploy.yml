@@ -37,7 +37,7 @@ jobs:
       - name: Fetch Railway service URL via GraphQL API
         id: railway
         env:
-          RAILWAY_TOKEN: ${{ secrets.AT_2_ENV_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
           # The deployment environment_url is the Railway dashboard page, not the
           # service URL. Extract the environmentId from its query string and query
