@@ -36,7 +36,9 @@ export async function resetRequestRoute(app: FastifyInstance): Promise<void> {
       }
     );
 
-    await sendPasswordResetEmail(email, rawToken, env);
+    const appUrl =
+      (request.headers["x-app-url"] as string | undefined) ?? env.APP_URL;
+    await sendPasswordResetEmail(email, rawToken, appUrl, env);
 
     return reply.status(200).send({ message: "If that email is registered, a reset link has been sent." });
   });

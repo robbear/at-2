@@ -346,6 +346,18 @@ Vercel redeploy.
 
 See `/docs/pr-preview-flow.md` for the full flow.
 
+### Canonical app URL
+
+`getBaseUrl()` in `packages/web/src/lib/base-url.ts` is the single source of
+truth for the app's own URL. Priority order:
+
+1. `NEXT_PUBLIC_SITE_URL` — set in Vercel production env (e.g. `https://atlasphere.app`)
+2. `VERCEL_URL` — injected automatically by Vercel for all deployments (preview included)
+3. `http://localhost:3000` — local dev fallback
+
+Use `getBaseUrl()` wherever the app needs its own URL (email links, meta tags, etc.).
+Never read `APP_URL` on the web side — that variable lives in the API only.
+
 ### Vercel (web)
 
 Vercel deploys `packages/web`. Two contexts:
@@ -370,4 +382,4 @@ to `atlasphere.app`).
 | `/docs/storage.md` | R2 bucket layout and presigned upload flow |
 | `/docs/map-providers.md` | Provider switching, quota tracking, alerting |
 | `/docs/railway-environments.md` | Railway deployment contexts, env-specific variable resolution |
-| `/docs/pr-preview-flow.md` | PR preview environment flow, Railway→Vercel API URL injection |
+| `/docs/pr-preview-flow.md` | PR preview environment flow, Railway→Vercel API URL injection, `VERCEL_URL` for app URL |

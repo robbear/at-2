@@ -52,7 +52,9 @@ export async function registerRoute(app: FastifyInstance): Promise<void> {
       verificationToken,
     });
 
-    await sendVerificationEmail(email, verificationToken, env);
+    const appUrl =
+      (request.headers["x-app-url"] as string | undefined) ?? env.APP_URL;
+    await sendVerificationEmail(email, verificationToken, appUrl, env);
 
     return reply.status(201).send({ message: "Registration successful. Check your email to verify your account." });
   });

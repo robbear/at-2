@@ -29,9 +29,10 @@ async function sendEmail(
 export async function sendVerificationEmail(
   to: string,
   token: string,
-  env: Pick<Env, "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "APP_URL">
+  appUrl: string,
+  env: Pick<Env, "RESEND_API_KEY" | "RESEND_FROM_EMAIL">
 ): Promise<void> {
-  const url = `${env.APP_URL}/auth/verify?token=${encodeURIComponent(token)}`;
+  const url = `${appUrl}/auth/verify?token=${encodeURIComponent(token)}`;
   await sendEmail(
     {
       to,
@@ -47,9 +48,10 @@ export async function sendVerificationEmail(
 export async function sendPasswordResetEmail(
   to: string,
   token: string,
-  env: Pick<Env, "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "APP_URL">
+  appUrl: string,
+  env: Pick<Env, "RESEND_API_KEY" | "RESEND_FROM_EMAIL">
 ): Promise<void> {
-  const url = `${env.APP_URL}/auth/reset/confirm?token=${encodeURIComponent(token)}`;
+  const url = `${appUrl}/auth/reset/confirm?token=${encodeURIComponent(token)}`;
   await sendEmail(
     {
       to,
