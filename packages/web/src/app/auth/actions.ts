@@ -12,7 +12,9 @@ export async function signInAction(formData: FormData): Promise<void> {
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/",
+      // Use an absolute URL so Auth.js doesn't resolve the path against
+      // AUTH_URL, which may be stale or wrong in some environments.
+      redirectTo: getBaseUrl(),
     });
   } catch (err) {
     if (err instanceof CredentialsSignin) {
@@ -27,7 +29,7 @@ export async function signInAction(formData: FormData): Promise<void> {
 }
 
 export async function signOutAction(): Promise<void> {
-  await signOut({ redirectTo: "/" });
+  await signOut({ redirectTo: getBaseUrl() });
 }
 
 export async function registerAction(
