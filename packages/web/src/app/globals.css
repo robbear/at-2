@@ -19,4 +19,13 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Tailwind Preflight resets border-width to 0, so bare <input> elements have
+     no visible border. Restore minimal visibility for text-like inputs.
+     Shadcn components override these via their own utility classes. */
+  input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    @apply border border-input bg-background rounded-md px-3 py-2 text-sm;
+  }
 }
