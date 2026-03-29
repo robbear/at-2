@@ -3,6 +3,7 @@
 import { signIn, signOut } from "../../auth";
 import { RegistrationSchema, PasswordResetRequestSchema, PasswordResetSchema } from "@at-2/shared";
 import { getApiUrl } from "@/lib/api-url";
+import { getBaseUrl } from "@/lib/base-url";
 import { redirect } from "next/navigation";
 import { AuthError, CredentialsSignin } from "next-auth";
 
@@ -46,7 +47,7 @@ export async function registerAction(
 
   const res = await fetch(`${getApiUrl()}/api/v1/auth/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-App-URL": getBaseUrl() },
     body: JSON.stringify(parsed.data),
   });
 
@@ -72,7 +73,7 @@ export async function resetRequestAction(
 
   await fetch(`${getApiUrl()}/api/v1/auth/reset-request`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-App-URL": getBaseUrl() },
     body: JSON.stringify(parsed.data),
   });
 

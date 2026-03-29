@@ -1,9 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import supertest from "supertest";
 import { buildApp } from "./app.js";
 import { connectDb, disconnectDb } from "./db.js";
 import { getProfileModel } from "./models/profile.js";
 import type { FastifyInstance } from "fastify";
+
+vi.mock("./services/email.js", () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+  sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email.js";
 
 const TEST_PASSWORD = "test-password-123";
 
@@ -250,6 +257,66 @@ describe("Auth routes", () => {
     // Verify reset token was NOT cleared (reset was rejected)
     const after = await Profile.findOne({ email });
     expect(after?.resetToken).toBeTruthy();
+  });
+
+  // -------------------------------------------------------------------------
+  // X-App-URL header
+  // -------------------------------------------------------------------------
+
+  it("POST /api/v1/auth/register with X-App-URL uses that URL for the email link", async () => {
+    const mockFn = sendVerificationEmail as ReturnType<typeof vi.fn>;
+    mockFn.mockClear();
+
+    const res = await supertest(app.server)
+      .post("/api/v1/auth/register")
+      .set("X-App-URL", "https://preview.example.com")
+      .send(regBody("xappurl@example.com", "xappurluser"));
+    expect(res.status).toBe(201);
+
+    expect(mockFn).toHaveBeenCalledOnce();
+    const [, , appUrl] = mockFn.mock.calls[0] as [string, string, string];
+    expect(appUrl).toBe("https://preview.example.com");
+  });
+
+  it("POST /api/v1/auth/register without X-App-URL falls back to APP_URL env", async () => {
+    const mockFn = sendVerificationEmail as ReturnType<typeof vi.fn>;
+    mockFn.mockClear();
+    const saved = process.env["APP_URL"];
+    process.env["APP_URL"] = "http://localhost:3000";
+
+    const res = await supertest(app.server)
+      .post("/api/v1/auth/register")
+      .send(regBody("fallback@example.com", "fallbackuser"));
+    expect(res.status).toBe(201);
+
+    expect(mockFn).toHaveBeenCalledOnce();
+    const [, , appUrl] = mockFn.mock.calls[0] as [string, string, string];
+    expect(appUrl).toBe("http://localhost:3000");
+
+    process.env["APP_URL"] = saved;
+  });
+
+  it("POST /api/v1/auth/reset-request with X-App-URL uses that URL for the email link", async () => {
+    // Register and verify a user first so reset-request actually sends an email
+    const email = "reset-xappurl@example.com";
+    await supertest(app.server)
+      .post("/api/v1/auth/register")
+      .send(regBody(email, "resetxappuser"));
+    const Profile = getProfileModel();
+    await Profile.updateOne({ email }, { $set: { emailVerified: true } });
+
+    const mockFn = sendPasswordResetEmail as ReturnType<typeof vi.fn>;
+    mockFn.mockClear();
+
+    const res = await supertest(app.server)
+      .post("/api/v1/auth/reset-request")
+      .set("X-App-URL", "https://preview.example.com")
+      .send({ email });
+    expect(res.status).toBe(200);
+
+    expect(mockFn).toHaveBeenCalledOnce();
+    const [, , appUrl] = mockFn.mock.calls[0] as [string, string, string];
+    expect(appUrl).toBe("https://preview.example.com");
   });
 
   afterAll(async () => {

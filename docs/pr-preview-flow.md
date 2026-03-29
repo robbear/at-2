@@ -65,6 +65,23 @@ How to obtain each:
 
 ---
 
+## App URL in preview deployments
+
+The web app's canonical URL (used for email verification/reset links and social
+meta tags) is resolved by `getBaseUrl()` in `packages/web/src/lib/base-url.ts`:
+
+1. `NEXT_PUBLIC_SITE_URL` — explicit override (set in Vercel production only)
+2. `VERCEL_URL` — injected automatically by Vercel for **every** deployment,
+   including preview branches. Each preview gets a unique subdomain, so
+   `getBaseUrl()` is automatically correct for every PR without any
+   per-branch configuration.
+3. `http://localhost:3000` — local dev fallback
+
+**No per-branch configuration is needed for the app URL.** Only `API_URL`
+requires the branch-scoped injection described above.
+
+---
+
 ## Debugging
 
 The workflow's first step prints the full `github.event` payload to the
