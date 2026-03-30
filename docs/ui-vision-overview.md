@@ -8,6 +8,8 @@ Atlasphere is intended to run both on mobile devices as well as wide-screen desk
 
 The outer most window may need room for a banner at the top to display the Atlasphere logo and room for accessing a menu and invoking the search view.
 
+Note for Joey: auth pages are separate routes outside the map layout.
+
 ## Important Resource Consideration
 
 The map resource (Mapbox or Google Map) is expensive and so the implementation design should be to load it once and only once, if possible in a Single Page Application design.
