@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { ReactNode } from "react";
 import type { Marker } from "@at-2/shared";
 import { Header } from "@/components/layout/Header";
@@ -52,15 +53,21 @@ export default async function MapLayout({
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
       <div className="flex-1 relative min-h-0">
-        <MapShell
-          initialMarkers={markers}
-          providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
-          defaultLat={defaultLat}
-          defaultLng={defaultLng}
-          defaultZoom={defaultZoom}
+        <Suspense
+          fallback={
+            <div className="w-full h-full bg-slate-100 animate-pulse" />
+          }
         >
-          {children}
-        </MapShell>
+          <MapShell
+            initialMarkers={markers}
+            providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
+            defaultLat={defaultLat}
+            defaultLng={defaultLng}
+            defaultZoom={defaultZoom}
+          >
+            {children}
+          </MapShell>
+        </Suspense>
       </div>
     </div>
   );

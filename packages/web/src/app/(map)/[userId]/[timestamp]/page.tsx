@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import type { ReactElement } from "react";
 import type { Marker } from "@at-2/shared";
 import { MarkerPreviewPanel } from "@/components/markers/MarkerPreviewPanel";
@@ -35,5 +36,9 @@ export default async function MarkerPreviewPage({
     notFound();
   }
 
-  return <MarkerPreviewPanel marker={marker} />;
+  return (
+    <Suspense>
+      <MarkerPreviewPanel marker={marker} />
+    </Suspense>
+  );
 }
