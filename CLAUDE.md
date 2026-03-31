@@ -246,11 +246,20 @@ are not supported and will not be reimplemented.
 
 | Token | Value |
 |---|---|
-| Primary | `#2563eb` |
-| Surface | `#ffffff` |
+| `brand.blue` | `#0094dd` — Atlasphere blue (primary) |
+| `brand.green` | `#93c572` — Atlasphere green (accent) |
+| `surface` | `#ffffff` |
+| `surface-muted` | `#f8fafc` (slate-50) |
 | Border | `slate-200` |
 | Radius large | `0.75rem` |
 | Radius standard | `0.375rem` |
+
+### Typography (via `next/font/google`)
+
+| Variable | Font | Role |
+|---|---|---|
+| `--font-dm-sans` | DM Sans | UI chrome (`font-sans`) |
+| `--font-lora` | Lora | Content / prose (`font-serif`) |
 
 ### Component structure
 
