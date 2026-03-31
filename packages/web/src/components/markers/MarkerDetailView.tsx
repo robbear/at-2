@@ -1,15 +1,17 @@
 import type { ReactElement } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { MDXRemote } from "next-mdx-remote/rsc";
+import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
+import { resolveImageUrl } from "@/lib/r2-url";
 
 interface MarkerDetailViewProps {
   marker: Marker;
 }
 
-export function MarkerDetailView({
+export async function MarkerDetailView({
   marker,
-}: MarkerDetailViewProps): ReactElement {
+}: MarkerDetailViewProps): Promise<ReactElement> {
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
@@ -21,6 +23,28 @@ export function MarkerDetailView({
     month: "long",
     day: "numeric",
   });
+
+  const imageUrl = resolveImageUrl(marker.snippetImage);
+
+  let bodyContent: ReactElement;
+  if (!marker.markdown || marker.markdown.trim() === "") {
+    bodyContent = (
+      <p className="text-slate-500 italic">No content available.</p>
+    );
+  } else {
+    try {
+      const { content } = await compileMDX({ source: marker.markdown });
+      bodyContent = content;
+    } catch {
+      // v1 data may contain custom extension syntax (e.g. [[youtube:id]]) that
+      // is not valid MDX. Fall back to displaying the raw source as plain text.
+      bodyContent = (
+        <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans">
+          {marker.markdown}
+        </pre>
+      );
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -46,8 +70,20 @@ export function MarkerDetailView({
           </p>
         </header>
 
+        {imageUrl && (
+          <div className="relative w-full aspect-video mb-6 rounded-lg overflow-hidden">
+            <Image
+              src={imageUrl}
+              alt={marker.title}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          </div>
+        )}
+
         <div className="prose prose-slate max-w-none font-serif">
-          <MDXRemote source={marker.markdown} />
+          {bodyContent}
         </div>
       </article>
     </div>
