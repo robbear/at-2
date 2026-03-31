@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import type { ReactElement } from "react";
 import {
   APIProvider,
@@ -44,8 +44,16 @@ export function GoogleMap({
   zoom,
   markers,
   onMove,
+  onMarkerClick,
 }: MapProps): ReactElement {
   const apiKey = process.env["NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"] ?? "";
+
+  const handleMarkerClick = useCallback(
+    (markerId: string) => () => {
+      onMarkerClick?.(markerId);
+    },
+    [onMarkerClick],
+  );
 
   return (
     <APIProvider apiKey={apiKey}>
@@ -61,6 +69,8 @@ export function GoogleMap({
           <AdvancedMarker
             key={marker.id}
             position={{ lat: marker.lat, lng: marker.lng }}
+            onClick={handleMarkerClick(marker.id)}
+            style={{ cursor: onMarkerClick ? "pointer" : "default" }}
           >
             <BaseMarker color={marker.color} />
           </AdvancedMarker>

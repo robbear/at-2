@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { DM_Sans, Lora } from "next/font/google";
 import "./globals.css";
 import { getBaseUrl } from "@/lib/base-url";
+import { Providers } from "@/components/providers";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-lora",
+  display: "swap",
+});
 
 const SITE_DESCRIPTION =
   "Discover and share stories tied to places. Every location on Earth has a story worth telling.";
@@ -39,7 +53,9 @@ export default function RootLayout({
 }): ReactNode {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${dmSans.variable} ${lora.variable} font-sans`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

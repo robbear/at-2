@@ -1,12 +1,12 @@
 import type { ReactElement } from "react";
 
 interface BaseMarkerProps {
-  color?: string; // default "#2563eb" (primary)
+  color?: string; // default "#0094dd" (brand.blue)
   size?: number; // default 10px diameter
 }
 
 export function BaseMarker({
-  color = "#2563eb",
+  color = "#0094dd",
   size = 10,
 }: BaseMarkerProps): ReactElement {
   return (

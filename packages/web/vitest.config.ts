@@ -4,16 +4,39 @@ import path from "path";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
+const sharedAlias = {
+  "@at-2/shared": path.resolve(__dirname, "../shared/src/index.ts"),
+  "@": path.resolve(__dirname, "./src"),
+};
+
 export default defineConfig({
-  resolve: {
-    alias: {
-      // Resolve @at-2/shared from TypeScript source during tests.
-      // This avoids requiring a build step before running the test suite.
-      "@at-2/shared": path.resolve(__dirname, "../shared/src/index.ts"),
-    },
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "react",
   },
   test: {
-    environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    projects: [
+      {
+        resolve: { alias: sharedAlias },
+        test: {
+          name: "node",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+        },
+      },
+      {
+        resolve: { alias: sharedAlias },
+        esbuild: {
+          jsx: "automatic",
+          jsxImportSource: "react",
+        },
+        test: {
+          name: "browser",
+          environment: "happy-dom",
+          include: ["src/**/*.test.tsx"],
+          setupFiles: ["src/test-utils/setup.ts"],
+        },
+      },
+    ],
   },
 });

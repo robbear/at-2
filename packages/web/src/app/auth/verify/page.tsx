@@ -6,15 +6,21 @@ interface Props {
   searchParams: Promise<{ token?: string }>;
 }
 
-export default async function VerifyPage({ searchParams }: Props): Promise<ReactNode> {
+export default async function VerifyPage({
+  searchParams,
+}: Props): Promise<ReactNode> {
   const { token } = await searchParams;
 
   if (!token) {
     return (
-      <main>
-        <h1>Invalid link</h1>
-        <p>The verification link is missing a token.</p>
-      </main>
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 mb-3">
+          Invalid link
+        </h1>
+        <p className="text-sm text-slate-600">
+          The verification link is missing a token.
+        </p>
+      </div>
     );
   }
 
@@ -22,13 +28,17 @@ export default async function VerifyPage({ searchParams }: Props): Promise<React
 
   if (error) {
     return (
-      <main>
-        <h1>Verification failed</h1>
-        <p>{error}</p>
-        <p>
-          <a href="/auth/signin">Back to sign in</a>
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 mb-3">
+          Verification failed
+        </h1>
+        <p className="text-sm text-slate-600 mb-4">{error}</p>
+        <p className="text-sm text-slate-600">
+          <a href="/auth/signin" className="text-brand-blue hover:underline">
+            Back to sign in
+          </a>
         </p>
-      </main>
+      </div>
     );
   }
 
