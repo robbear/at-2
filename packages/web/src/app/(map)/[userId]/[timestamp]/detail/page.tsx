@@ -12,11 +12,11 @@ async function fetchMarker(
   userId: string,
   timestamp: string,
 ): Promise<Marker | null> {
-  const markerId = `${userId}/${timestamp}`;
   try {
-    const res = await fetch(`${getApiUrl()}/api/v1/markers/${encodeURIComponent(markerId)}`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(
+      `${getApiUrl()}/api/v1/markers/${encodeURIComponent(userId)}/${encodeURIComponent(timestamp)}`,
+      { next: { revalidate: 60 } },
+    );
     if (res.status === 404) return null;
     if (!res.ok) return null;
     return (await res.json()) as Marker;
