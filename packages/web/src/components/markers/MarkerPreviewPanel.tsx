@@ -6,6 +6,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Marker } from "@at-2/shared";
+import { resolveImageUrl } from "@/lib/r2-url";
 
 interface MarkerPreviewPanelProps {
   marker: Marker;
@@ -21,6 +22,8 @@ export function MarkerPreviewPanel({
     const p = new URLSearchParams(searchParams.toString());
     router.push(`/?${p.toString()}`);
   }
+
+  const imageUrl = resolveImageUrl(marker.snippetImage);
 
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
@@ -47,12 +50,13 @@ export function MarkerPreviewPanel({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-auto">
-        {marker.snippetImage && (
+        {imageUrl && (
           <div className="relative w-full aspect-video">
             <Image
-              src={marker.snippetImage}
+              src={imageUrl}
               alt={marker.title}
               fill
+              unoptimized
               className="object-cover"
             />
           </div>
