@@ -13,6 +13,11 @@ export const metadata: Metadata = {
     template: "%s | Atlasphere",
   },
   description: SITE_DESCRIPTION,
+  icons: {
+    icon: "/images/atlasphere-green-on-blue.svg",
+    shortcut: "/images/atlasphere-green-on-blue.svg",
+    apple: "/images/atlasphere-green-on-blue.svg",
+  },
   openGraph: {
     type: "website",
     siteName: "Atlasphere",
