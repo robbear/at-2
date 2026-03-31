@@ -34,14 +34,14 @@ export function MarkerPreviewPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header row */}
-      <div className="flex items-start justify-between p-4 gap-2 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900 leading-snug">
+      <div className="flex items-start justify-between p-4 gap-2 bg-brand-blue">
+        <h2 className="text-lg font-semibold text-white leading-snug">
           {marker.title}
         </h2>
         <button
           type="button"
           onClick={handleClose}
-          className="shrink-0 p-1 hover:bg-slate-100 rounded-md transition-colors"
+          className="shrink-0 p-1 hover:bg-white/20 rounded-md transition-colors text-white"
           aria-label="Close preview"
         >
           <X size={20} />
