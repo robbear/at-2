@@ -45,6 +45,7 @@ export function GoogleMap({
   markers,
   onMove,
   onMarkerClick,
+  selectedMarkerId,
 }: MapProps): ReactElement {
   const apiKey = process.env["NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"] ?? "";
 
@@ -72,7 +73,10 @@ export function GoogleMap({
             onClick={handleMarkerClick(marker.id)}
             style={{ cursor: onMarkerClick ? "pointer" : "default" }}
           >
-            <BaseMarker color={marker.color} />
+            <BaseMarker
+              color={marker.color}
+              selected={marker.id === selectedMarkerId}
+            />
           </AdvancedMarker>
         ))}
         <IdleSync onMove={onMove} />
