@@ -28,9 +28,9 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   icons: {
-    icon: "/images/atlasphere-green-on-blue.svg",
-    shortcut: "/images/atlasphere-green-on-blue.svg",
-    apple: "/images/atlasphere-green-on-blue.svg",
+    icon: "/images/atlasphere-tab-icon.png",
+    shortcut: "/images/atlasphere-tab-icon.png",
+    apple: "/images/atlasphere-tab-icon.png",
   },
   openGraph: {
     type: "website",
