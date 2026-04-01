@@ -107,12 +107,16 @@ export function MapShell({
     [router, searchParams],
   );
 
+  const selectedMarkerId =
+    userId && timestamp ? `${userId}/${timestamp}` : undefined;
+
   const mapProps: MapProps = {
     center: mapCenter,
     zoom: mapZoom,
     markers: initialMarkers,
     onMove: handleMove,
     onMarkerClick: handleMarkerClick,
+    selectedMarkerId,
   };
 
   return (

@@ -10,7 +10,7 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen bg-surface-muted flex flex-col">
       {/* Brand header */}
-      <div className="bg-brand-blue py-4 px-6 flex justify-center">
+      <div className="bg-white border-b border-slate-200 py-4 px-6 flex justify-center">
         <Link href="/">
           <Image
             src="/images/atlasphere-green-blue-page-logo.svg"

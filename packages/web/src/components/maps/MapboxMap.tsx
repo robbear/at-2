@@ -14,6 +14,7 @@ export function MapboxMap({
   markers,
   onMove,
   onMarkerClick,
+  selectedMarkerId,
 }: MapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
 
@@ -43,10 +44,14 @@ export function MapboxMap({
           key={marker.id}
           latitude={marker.lat}
           longitude={marker.lng}
+          anchor="bottom"
           onClick={() => onMarkerClick?.(marker.id)}
           style={{ cursor: onMarkerClick ? "pointer" : "default" }}
         >
-          <BaseMarker color={marker.color} />
+          <BaseMarker
+            color={marker.color}
+            selected={marker.id === selectedMarkerId}
+          />
         </Marker>
       ))}
     </Map>

@@ -11,4 +11,5 @@ export interface MapProps {
   markers: MarkerDot[];
   onMove?: (center: { lat: number; lng: number }, zoom: number) => void;
   onMarkerClick?: (markerId: string) => void;
+  selectedMarkerId?: string;
 }
