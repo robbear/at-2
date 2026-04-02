@@ -7,10 +7,12 @@ import { resolveImageUrl } from "@/lib/r2-url";
 
 interface MarkerDetailViewProps {
   marker: Marker;
+  searchString?: string;
 }
 
 export async function MarkerDetailView({
   marker,
+  searchString = "",
 }: MarkerDetailViewProps): Promise<ReactElement> {
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
@@ -50,7 +52,7 @@ export async function MarkerDetailView({
     <div className="max-w-3xl mx-auto px-4 py-6">
       <nav className="mb-6">
         <Link
-          href={`/${marker.id}`}
+          href={`/${marker.id}${searchString ? `?${searchString}` : ""}`}
           className="inline-flex items-center gap-1 text-sm text-brand-blue hover:underline"
         >
           ← Return to map

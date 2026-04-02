@@ -87,7 +87,7 @@ export async function markersRoutes(app: FastifyInstance): Promise<void> {
       };
     }
 
-    const markers = await Marker.find(filter).limit(200).lean({ virtuals: false });
+    const markers = await Marker.find(filter).lean({ virtuals: false });
     const result = markers.map((m) => {
       const obj = { ...(m as unknown as Record<string, unknown>) };
       obj["id"] = obj["_id"];

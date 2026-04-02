@@ -6,6 +6,7 @@ import { getApiUrl } from "@/lib/api-url";
 
 interface PageParams {
   params: Promise<{ userId: string; timestamp: string }>;
+  searchParams: Promise<Record<string, string | string[]>>;
 }
 
 async function fetchMarker(
@@ -27,13 +28,21 @@ async function fetchMarker(
 
 export default async function MarkerDetailPage({
   params,
+  searchParams,
 }: PageParams): Promise<ReactElement> {
   const { userId, timestamp } = await params;
+  const resolvedSearch = await searchParams;
   const marker = await fetchMarker(userId, timestamp);
 
   if (!marker) {
     notFound();
   }
 
-  return <MarkerDetailView marker={marker} />;
+  const searchString = new URLSearchParams(
+    Object.entries(resolvedSearch).flatMap(([k, v]) =>
+      Array.isArray(v) ? v.map((val) => [k, val]) : [[k, v]],
+    ),
+  ).toString();
+
+  return <MarkerDetailView marker={marker} searchString={searchString} />;
 }

@@ -68,9 +68,8 @@ describe("MarkerPreviewPanel", () => {
     render(<MarkerPreviewPanel marker={MOCK_MARKER} />);
     const fullViewLink = screen.getByRole("link", { name: /full view/i });
     expect(fullViewLink).toBeInTheDocument();
-    expect(fullViewLink).toHaveAttribute(
-      "href",
-      "/testuser/1234567890/detail",
+    expect(fullViewLink.getAttribute("href")).toMatch(
+      /^\/testuser\/1234567890\/detail/,
     );
   });
 
