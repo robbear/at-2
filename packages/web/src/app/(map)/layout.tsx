@@ -53,7 +53,7 @@ export default async function MapLayout({
       fallback={<div className="w-full h-screen bg-slate-100 animate-pulse" />}
     >
       <MapLayoutClient
-        markers={markers}
+        initialMarkers={markers}
         providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
         defaultLat={defaultLat}
         defaultLng={defaultLng}
