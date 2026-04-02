@@ -25,7 +25,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
 
   return (
     <>
-      <header className="h-[52px] md:h-[60px] bg-brand-blue flex items-center justify-between px-4 shrink-0 z-40">
+      <header className="h-[52px] md:h-[60px] bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-40">
         <Link href="/" className="flex items-center">
           <Image
             src="/images/atlasphere-green-blue-page-logo.svg"
@@ -40,7 +40,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
           <button
             type="button"
             onClick={onSearchToggle}
-            className="relative text-white p-2 hover:bg-white/20 rounded-md transition-colors"
+            className="relative text-slate-700 p-2 hover:bg-slate-100 rounded-md transition-colors"
             aria-label="Toggle search filters"
           >
             <SlidersHorizontal size={22} />
@@ -56,7 +56,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
           <button
             type="button"
             onClick={handleShare}
-            className="text-white p-2 hover:bg-white/20 rounded-md transition-colors"
+            className="text-slate-700 p-2 hover:bg-slate-100 rounded-md transition-colors"
             aria-label="Copy link to clipboard"
           >
             <Share2 size={22} />
@@ -66,7 +66,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="text-white p-2 hover:bg-white/20 rounded-md transition-colors"
+            className="text-slate-700 p-2 hover:bg-slate-100 rounded-md transition-colors"
             aria-label="Open menu"
           >
             <Menu size={24} />

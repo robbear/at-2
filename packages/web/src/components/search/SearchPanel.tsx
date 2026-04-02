@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ReactElement, ReactNode, KeyboardEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
@@ -140,6 +140,24 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
     () => searchParams.get("dateRange.usePosttime") === "true",
   );
 
+  // Reset form to current URL state each time the panel opens, so that
+  // Cancel always discards in-progress edits.
+  useEffect(() => {
+    if (!open) return;
+    setTags(searchParams.getAll("tags"));
+    setTagInput("");
+    setAllTags(searchParams.get("allTags") === "true");
+    setUserIds(searchParams.getAll("userIds"));
+    setAuthorInput("");
+    setNearEnabled(searchParams.has("near.lat"));
+    const d = searchParams.get("near.distance");
+    setRadiusKm(d ? Math.round(parseInt(d, 10) / 1000) : 40);
+    setDateStart(searchParams.get("dateRange.start") ?? "");
+    setDateEnd(searchParams.get("dateRange.end") ?? "");
+    setUsePosttime(searchParams.get("dateRange.usePosttime") === "true");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const addTag = useCallback(() => {
     const t = tagInput.trim();
     if (t && !tags.includes(t)) setTags((prev) => [...prev, t]);
@@ -194,9 +212,17 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
     onClose();
   }
 
-  function handleClearAll(): void {
-    router.replace("/");
-    onClose();
+  function handleClear(): void {
+    setTags([]);
+    setTagInput("");
+    setAllTags(false);
+    setUserIds([]);
+    setAuthorInput("");
+    setNearEnabled(false);
+    setRadiusKm(40);
+    setDateStart("");
+    setDateEnd("");
+    setUsePosttime(false);
   }
 
   return (
@@ -362,20 +388,27 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
       </Section>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-surface border-t border-slate-100 px-4 py-3 flex flex-col gap-2">
+      <div className="sticky bottom-0 bg-surface border-t border-slate-100 px-4 py-3 flex gap-2">
         <button
           type="button"
           onClick={handleSubmit}
-          className="w-full bg-brand-blue text-white text-sm font-semibold py-2.5 rounded-md hover:opacity-90 transition-opacity"
+          className="flex-1 bg-brand-blue text-white text-sm font-semibold py-2.5 rounded-md hover:opacity-90 transition-opacity"
         >
           Search
         </button>
         <button
           type="button"
-          onClick={handleClearAll}
-          className="w-full text-sm text-slate-500 hover:text-slate-700 transition-colors py-1"
+          onClick={handleClear}
+          className="flex-1 border border-slate-200 text-slate-700 text-sm font-semibold py-2.5 rounded-md hover:bg-slate-50 transition-colors"
         >
-          Clear all
+          Clear
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 border border-slate-200 text-slate-700 text-sm font-semibold py-2.5 rounded-md hover:bg-slate-50 transition-colors"
+        >
+          Cancel
         </button>
       </div>
     </div>

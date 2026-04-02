@@ -25,10 +25,11 @@ describe("SearchPanel", () => {
     expect(screen.getByText("Date range")).toBeInTheDocument();
   });
 
-  it("renders Search and Clear all buttons when open", () => {
+  it("renders Search, Clear, and Cancel buttons when open", () => {
     render(<SearchPanel open={true} onClose={vi.fn()} />);
     expect(screen.getByRole("button", { name: /^search$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /clear all/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^clear$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^cancel$/i })).toBeInTheDocument();
   });
 
   it("renders date preset buttons when open", () => {
