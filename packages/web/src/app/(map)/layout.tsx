@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import type { ReactNode } from "react";
 import type { Marker } from "@at-2/shared";
-import { Header } from "@/components/layout/Header";
-import { MapShell } from "@/components/maps/MapShell";
+import { MapLayoutClient } from "@/components/layout/MapLayoutClient";
 import type { MarkerDot } from "@/components/maps/types";
 import { getApiUrl } from "@/lib/api-url";
 
@@ -50,25 +49,18 @@ export default async function MapLayout({
   const defaultZoom = parseFloat(process.env["DEFAULT_ZOOM"] ?? "2");
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <Header />
-      <div className="flex-1 relative min-h-0">
-        <Suspense
-          fallback={
-            <div className="w-full h-full bg-slate-100 animate-pulse" />
-          }
-        >
-          <MapShell
-            initialMarkers={markers}
-            providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
-            defaultLat={defaultLat}
-            defaultLng={defaultLng}
-            defaultZoom={defaultZoom}
-          >
-            {children}
-          </MapShell>
-        </Suspense>
-      </div>
-    </div>
+    <Suspense
+      fallback={<div className="w-full h-screen bg-slate-100 animate-pulse" />}
+    >
+      <MapLayoutClient
+        markers={markers}
+        providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
+        defaultLat={defaultLat}
+        defaultLng={defaultLng}
+        defaultZoom={defaultZoom}
+      >
+        {children}
+      </MapLayoutClient>
+    </Suspense>
   );
 }

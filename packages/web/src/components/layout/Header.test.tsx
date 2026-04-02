@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Header } from "./Header";
 
 // Mock next/image
@@ -46,9 +46,55 @@ describe("Header", () => {
     expect(menuBtn).toBeInTheDocument();
   });
 
+  it("renders the search toggle button", () => {
+    render(<Header />);
+    const searchBtn = screen.getByRole("button", { name: /toggle search/i });
+    expect(searchBtn).toBeInTheDocument();
+  });
+
+  it("renders the share button", () => {
+    render(<Header />);
+    const shareBtn = screen.getByRole("button", { name: /copy link/i });
+    expect(shareBtn).toBeInTheDocument();
+  });
+
   it("logo links to home", () => {
     render(<Header />);
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/");
+  });
+
+  it("calls onSearchToggle when search button is clicked", () => {
+    const onSearchToggle = vi.fn();
+    render(<Header onSearchToggle={onSearchToggle} />);
+    fireEvent.click(screen.getByRole("button", { name: /toggle search/i }));
+    expect(onSearchToggle).toHaveBeenCalledOnce();
+  });
+
+  it("shows active indicator dot when searchActive is true", () => {
+    render(<Header searchActive={true} />);
+    // The dot span is aria-hidden, but we can check it's in the DOM
+    const searchBtn = screen.getByRole("button", { name: /toggle search/i });
+    const dot = searchBtn.querySelector('span[aria-hidden="true"]');
+    expect(dot).toBeInTheDocument();
+  });
+
+  it("does not show active indicator dot when searchActive is false", () => {
+    render(<Header searchActive={false} />);
+    const searchBtn = screen.getByRole("button", { name: /toggle search/i });
+    const dot = searchBtn.querySelector('span[aria-hidden="true"]');
+    expect(dot).not.toBeInTheDocument();
+  });
+
+  it("calls navigator.clipboard.writeText on share click", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      writable: true,
+    });
+
+    render(<Header />);
+    fireEvent.click(screen.getByRole("button", { name: /copy link/i }));
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
   });
 });
