@@ -81,7 +81,7 @@ export function MarkerPreviewPanel({
       {/* Footer CTA */}
       <div className="p-4 border-t border-slate-200">
         <Link
-          href={`/${marker.id}/detail`}
+          href={`/${marker.id}/detail?${searchParams.toString()}`}
           className="block w-full text-center bg-brand-blue text-white py-2 px-4 rounded-md font-medium hover:bg-brand-blue/90 transition-colors"
         >
           Full view
