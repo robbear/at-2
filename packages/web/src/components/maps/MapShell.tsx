@@ -55,6 +55,12 @@ export function MapShell({
   const zoomParam = searchParams.get("zoom");
   const mpParam = searchParams.get("mp");
 
+  // Derive route params before useState so the initializer can reference them.
+  const userId =
+    typeof params["userId"] === "string" ? params["userId"] : undefined;
+  const timestamp =
+    typeof params["timestamp"] === "string" ? params["timestamp"] : undefined;
+
   const [mapCenter, setMapCenter] = useState(() => {
     if (latParam !== null) {
       return { lat: parseFloat(latParam), lng: parseFloat(lngParam ?? "0") };
@@ -73,12 +79,6 @@ export function MapShell({
   );
 
   const provider = selectProvider(providerOverride, mpParam);
-
-  // Determine overlay state from route
-  const userId =
-    typeof params["userId"] === "string" ? params["userId"] : undefined;
-  const timestamp =
-    typeof params["timestamp"] === "string" ? params["timestamp"] : undefined;
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
   const hasPreview = hasMarker && !isDetail;
