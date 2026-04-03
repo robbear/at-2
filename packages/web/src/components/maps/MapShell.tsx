@@ -55,34 +55,46 @@ export function MapShell({
   const zoomParam = searchParams.get("zoom");
   const mpParam = searchParams.get("mp");
 
-  const [mapCenter, setMapCenter] = useState(() => ({
-    lat: latParam !== null ? parseFloat(latParam) : defaultLat,
-    lng: lngParam !== null ? parseFloat(lngParam) : defaultLng,
-  }));
+  // Derive route params before useState so the initializer can reference them.
+  const userId =
+    typeof params["userId"] === "string" ? params["userId"] : undefined;
+  const timestamp =
+    typeof params["timestamp"] === "string" ? params["timestamp"] : undefined;
+
+  const [mapCenter, setMapCenter] = useState(() => {
+    if (latParam !== null) {
+      return { lat: parseFloat(latParam), lng: parseFloat(lngParam ?? "0") };
+    }
+    // No lat/lng in URL — if a marker is selected, center the map on it.
+    // This handles fresh page loads of /{userId}/{timestamp} without viewport params.
+    if (userId && timestamp) {
+      const markerId = `${userId}/${timestamp}`;
+      const selected = initialMarkers.find((m) => m.id === markerId);
+      if (selected) return { lat: selected.lat, lng: selected.lng };
+    }
+    return { lat: defaultLat, lng: defaultLng };
+  });
   const [mapZoom, setMapZoom] = useState(() =>
     zoomParam !== null ? parseFloat(zoomParam) : defaultZoom,
   );
 
   const provider = selectProvider(providerOverride, mpParam);
-
-  // Determine overlay state from route
-  const userId =
-    typeof params["userId"] === "string" ? params["userId"] : undefined;
-  const timestamp =
-    typeof params["timestamp"] === "string" ? params["timestamp"] : undefined;
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
   const hasPreview = hasMarker && !isDetail;
 
-  // Auto-center on selected marker
+  // Auto-center on selected marker when no lat/lng is present in the URL.
+  // Handles the case where initialMarkers updates after mount (client re-fetch)
+  // and the marker wasn't found during the useState initializer.
   useEffect(() => {
+    if (latParam !== null) return; // explicit viewport — don't override
     if (!userId || !timestamp) return;
     const markerId = `${userId}/${timestamp}`;
     const marker = initialMarkers.find((m) => m.id === markerId);
     if (marker) {
       setMapCenter({ lat: marker.lat, lng: marker.lng });
     }
-  }, [userId, timestamp, initialMarkers]);
+  }, [latParam, userId, timestamp, initialMarkers]);
 
   const handleMove = useCallback(
     (center: { lat: number; lng: number }, z: number) => {
