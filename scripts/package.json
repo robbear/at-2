@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "migrate-v1": "tsx migrate-v1.ts"
+    "migrate-v1": "tsx migrate-v1.ts",
+    "patch-snippet-images": "tsx patch-snippet-images.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.3",
