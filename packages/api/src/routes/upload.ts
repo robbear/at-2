@@ -63,6 +63,10 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
           accessKeyId: env.R2_ACCESS_KEY_ID,
           secretAccessKey: env.R2_SECRET_ACCESS_KEY,
         },
+        // AWS SDK v3 adds CRC32 checksums by default; R2 does not support them
+        // and they bloat preflight CORS requirements. Disable here.
+        requestChecksumCalculation: "WHEN_REQUIRED",
+        responseChecksumValidation: "WHEN_REQUIRED",
       });
 
       const command = new PutObjectCommand({
