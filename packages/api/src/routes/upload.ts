@@ -75,7 +75,14 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
         ContentType: contentType,
       });
 
-      const uploadUrl = await getSignedUrl(client, command, { expiresIn: 300 });
+      // unhoistableHeaders forces content-type into X-Amz-SignedHeaders so that
+      // R2 validates it as part of the signature. Without this, the SDK omits
+      // content-type from the signed headers, and R2 rejects the browser PUT
+      // with 403 because the request includes an unsigned content-type header.
+      const uploadUrl = await getSignedUrl(client, command, {
+        expiresIn: 300,
+        unhoistableHeaders: new Set(["content-type"]),
+      });
 
       return reply.status(200).send({
         uploadUrl,
