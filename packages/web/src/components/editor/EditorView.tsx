@@ -13,8 +13,13 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import type { Marker } from "@at-2/shared";
-import { getApiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
+import {
+  presignUploadAction,
+  createMarkerAction,
+  updateMarkerAction,
+  deleteMarkerAction,
+} from "@/app/(map)/markers/actions";
 import { ImageGrid, type LocalImage } from "./ImageGrid";
 import { assignNames, computeNewCoverAfterRemoval } from "./imageUtils";
 
@@ -66,31 +71,19 @@ async function resizeImage(file: File, maxPx = 1024): Promise<File> {
 
 // ─── Upload helpers ───────────────────────────────────────────────────────────
 
-interface PresignResponse {
-  uploadUrl: string;
-  r2Path: string;
-}
-
 async function uploadImage(
   file: File,
   name: string,
   markerTimestamp: number,
 ): Promise<string> {
-  const presignRes = await fetch(`${getApiUrl()}/api/v1/upload/presign`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      filename: name,
-      contentType: "image/jpeg",
-      purpose: "marker-image",
-      markerTimestamp,
-    }),
-  });
-  if (!presignRes.ok) throw new Error("Presign failed");
-  const { uploadUrl, r2Path } = (await presignRes.json()) as PresignResponse;
+  // Presign via server action (has access to the httpOnly session cookie)
+  const { uploadUrl, r2Path } = await presignUploadAction(
+    name,
+    "image/jpeg",
+    markerTimestamp,
+  );
 
-  // Upload with retry
+  // PUT the file directly to R2 — with retry
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -357,29 +350,17 @@ export function EditorView({
     setSavedPayload({ images: uploadedImages, markerTimestamp });
 
     try {
-      let res: Response;
+      let saved: Marker;
       if (mode === "create") {
-        res = await fetch(`${getApiUrl()}/api/v1/markers`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        saved = await createMarkerAction(payload as Record<string, unknown>);
       } else {
         const [userId, ts] = marker!.id.split("/");
-        res = await fetch(
-          `${getApiUrl()}/api/v1/markers/${encodeURIComponent(userId!)}/${encodeURIComponent(ts!)}`,
-          {
-            method: "PUT",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
+        saved = await updateMarkerAction(
+          userId!,
+          ts!,
+          payload as Record<string, unknown>,
         );
       }
-
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-      const saved = (await res.json()) as Marker;
       router.push(`/${saved.id}`);
     } catch {
       setStatus("save-error");
@@ -400,11 +381,7 @@ export function EditorView({
     setStatus("deleting");
     const [userId, ts] = marker.id.split("/");
     try {
-      const res = await fetch(
-        `${getApiUrl()}/api/v1/markers/${encodeURIComponent(userId!)}/${encodeURIComponent(ts!)}`,
-        { method: "DELETE", credentials: "include" },
-      );
-      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+      await deleteMarkerAction(userId!, ts!);
       router.push("/");
     } catch {
       setStatus("idle");
