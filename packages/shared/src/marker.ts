@@ -10,6 +10,13 @@ export const MarkerColorsSchema = z.object({
   outline: z.string(),
 });
 
+export const MarkerImageSchema = z.object({
+  name: z.string(),   // sequential name: "1.jpg", "2.jpg", etc.
+  r2Path: z.string(), // full R2 storage path
+});
+
+export const MarkerImageArraySchema = z.array(MarkerImageSchema);
+
 export const MarkerSchema = z.object({
   id: z.string(), // {userId}/{timestamp}
   userId: z.string(),
@@ -19,6 +26,7 @@ export const MarkerSchema = z.object({
   contentUrl: z.string(),
   markdown: z.string(),
   tags: z.array(z.string()),
+  images: MarkerImageArraySchema.default([]),
   location: GeoPointSchema,
   datetime: z.coerce.date(),
   posttime: z.coerce.date(),
@@ -37,6 +45,7 @@ export const CreateMarkerSchema = z.object({
   contentUrl: z.string().default(""),
   markdown: z.string().default(""),
   tags: z.array(z.string()).default([]),
+  images: MarkerImageArraySchema.default([]),
   location: GeoPointSchema,
   datetime: z.coerce.date(),
   layerUrl: z.string().optional(),
@@ -51,6 +60,7 @@ export const UpdateMarkerSchema = CreateMarkerSchema.partial().extend({
 
 export type GeoPoint = z.infer<typeof GeoPointSchema>;
 export type MarkerColors = z.infer<typeof MarkerColorsSchema>;
+export type MarkerImage = z.infer<typeof MarkerImageSchema>;
 export type Marker = z.infer<typeof MarkerSchema>;
 export type CreateMarker = z.infer<typeof CreateMarkerSchema>;
 export type UpdateMarker = z.infer<typeof UpdateMarkerSchema>;

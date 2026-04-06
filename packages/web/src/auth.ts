@@ -64,6 +64,9 @@ const config: NextAuthConfig = {
       if (token.sub) {
         session.user.id = token.sub;
       }
+      if (token.userId) {
+        session.user.userId = token.userId as string;
+      }
       return session;
     },
   },

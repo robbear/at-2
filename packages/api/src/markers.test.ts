@@ -128,6 +128,29 @@ describe("Markers, profiles, and upload routes", () => {
       expect(res.body.tags).toEqual(["hiking", "california"]);
       expect(res.body.draft).toBe(false);
       expect(res.body.deleted).toBe(false);
+      expect(res.body.images).toEqual([]); // default empty images array
+    });
+
+    it("stores images array on create", async () => {
+      const images = [
+        { name: "1.jpg", r2Path: "accounts/alice/images/1700000001/1.jpg" },
+        { name: "2.jpg", r2Path: "accounts/alice/images/1700000001/2.jpg" },
+      ];
+      const res = await supertest(app.server)
+        .post("/api/v1/markers")
+        .set("Authorization", `Bearer ${aliceJwt}`)
+        .send({
+          title: "Marker with images",
+          location: { type: "Point", coordinates: [-122.0839, 37.3861] },
+          datetime: "2024-06-15T00:00:00Z",
+          images,
+          snippetImage: "accounts/alice/images/1700000001/1.jpg",
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.images).toEqual(images);
+      expect(res.body.snippetImage).toBe(
+        "accounts/alice/images/1700000001/1.jpg",
+      );
     });
 
     it("creates a draft marker when draft=true", async () => {
@@ -247,6 +270,23 @@ describe("Markers, profiles, and upload routes", () => {
         .send({ archived: true });
       expect(res.status).toBe(200);
       expect(res.body.archived).toBe(true);
+    });
+
+    it("owner can update images and snippetImage", async () => {
+      const [userId, timestamp] = markerId.split("/");
+      const images = [
+        { name: "1.jpg", r2Path: "accounts/alice/images/9999/1.jpg" },
+      ];
+      const res = await supertest(app.server)
+        .put(`/api/v1/markers/${userId}/${timestamp}`)
+        .set("Authorization", `Bearer ${aliceJwt}`)
+        .send({
+          images,
+          snippetImage: "accounts/alice/images/9999/1.jpg",
+        });
+      expect(res.status).toBe(200);
+      expect(res.body.images).toEqual(images);
+      expect(res.body.snippetImage).toBe("accounts/alice/images/9999/1.jpg");
     });
   });
 

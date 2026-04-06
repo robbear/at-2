@@ -31,6 +31,11 @@ vi.mock("./MenuDrawer", () => ({
   MenuDrawer: () => <div data-testid="menu-drawer" />,
 }));
 
+// Mock next-auth/react so useSession doesn't require SessionProvider
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+}));
+
 import React from "react";
 
 describe("Header", () => {

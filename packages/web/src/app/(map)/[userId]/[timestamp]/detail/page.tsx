@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
+import type { Metadata } from "next";
 import type { Marker } from "@at-2/shared";
 import { MarkerDetailView } from "@/components/markers/MarkerDetailView";
 import { getApiUrl } from "@/lib/api-url";
+import { getBaseUrl } from "@/lib/base-url";
 
 interface PageParams {
   params: Promise<{ userId: string; timestamp: string }>;
@@ -24,6 +26,47 @@ async function fetchMarker(
   } catch {
     return null;
   }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ userId: string; timestamp: string }>;
+}): Promise<Metadata> {
+  const { userId, timestamp } = await params;
+  const marker = await fetchMarker(userId, timestamp);
+  if (!marker) return {};
+
+  const baseUrl = getBaseUrl();
+  const r2BaseUrl = process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? "";
+
+  const imageUrl = marker.snippetImage
+    ? marker.snippetImage.startsWith("http")
+      ? marker.snippetImage
+      : `${r2BaseUrl}/${marker.snippetImage}`
+    : `${baseUrl}/images/atlasphere-green-on-blue.svg`;
+
+  const description =
+    marker.snippetText?.trim() || "View this location on Atlasphere.";
+  const canonicalUrl = `${baseUrl}/${marker.id}`;
+
+  return {
+    title: marker.title,
+    description,
+    openGraph: {
+      title: marker.title,
+      description,
+      url: canonicalUrl,
+      type: "article",
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: marker.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: marker.title,
+      description,
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function MarkerDetailPage({

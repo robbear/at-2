@@ -50,6 +50,7 @@ const MOCK_MARKER: Marker = {
   contentUrl: "",
   markdown: "# Test\n\nContent here.",
   tags: [],
+  images: [],
   location: { type: "Point", coordinates: [-122.4194, 37.7749] },
   datetime: new Date("2024-01-15"),
   posttime: new Date("2024-01-16"),

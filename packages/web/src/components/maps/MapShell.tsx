@@ -81,7 +81,10 @@ export function MapShell({
   const provider = selectProvider(providerOverride, mpParam);
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
-  const hasPreview = hasMarker && !isDetail;
+  const isEditor =
+    (pathname?.endsWith("/edit") ?? false) ||
+    (pathname === "/markers/new");
+  const hasPreview = hasMarker && !isDetail && !isEditor;
 
   // Auto-center on selected marker when no lat/lng is present in the URL.
   // Handles the case where initialMarkers updates after mount (client re-fetch)
@@ -137,10 +140,10 @@ export function MapShell({
       <div
         className={cn(
           "absolute transition-all duration-300",
-          !hasPreview && !isDetail && "inset-0",
+          !hasPreview && !isDetail && !isEditor && "inset-0",
           hasPreview &&
             "top-0 left-0 right-0 bottom-[45%] lg:bottom-0 lg:right-[40%]",
-          isDetail && "inset-0 invisible",
+          (isDetail || isEditor) && "inset-0 invisible",
         )}
       >
         {provider === "mapbox" ? (
@@ -178,6 +181,17 @@ export function MapShell({
         )}
       >
         {isDetail && children}
+      </div>
+
+      {/* Editor overlay — full screen over map */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-surface z-10",
+          "transition-opacity duration-300",
+          isEditor ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+      >
+        {isEditor && children}
       </div>
     </div>
   );
