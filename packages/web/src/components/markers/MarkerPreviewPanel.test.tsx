@@ -34,6 +34,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Mock next-auth — tests don't need a real SessionProvider
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+}));
+
 // Mock next/navigation hooks
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
