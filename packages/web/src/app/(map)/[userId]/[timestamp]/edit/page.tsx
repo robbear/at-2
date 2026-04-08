@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import type { Marker } from "@at-2/shared";
 import { EditorView } from "@/components/editor/EditorView";
-import { getApiUrl } from "@/lib/api-url";
+import { fetchMarkerAction } from "@/app/(map)/markers/actions";
 
 export default function EditMarkerPage(): ReactElement | null {
   const { data: session, status: authStatus } = useSession();
@@ -38,29 +38,16 @@ export default function EditMarkerPage(): ReactElement | null {
     if (authStatus !== "authenticated" || !userId || !timestamp) return;
 
     async function load(): Promise<void> {
-      try {
-        const res = await fetch(
-          `${getApiUrl()}/api/v1/markers/${encodeURIComponent(userId)}/${encodeURIComponent(timestamp)}`,
-          { credentials: "include" },
-        );
-        if (res.status === 404) {
-          setFetchError("not-found");
-          return;
-        }
-        if (!res.ok) {
-          setFetchError("not-found");
-          return;
-        }
-        const m = (await res.json()) as Marker;
-        // Ownership check
-        if (!session || m.userId !== session.user?.userId) {
-          setFetchError("forbidden");
-          return;
-        }
-        setMarker(m);
-      } catch {
+      const m = await fetchMarkerAction(userId, timestamp);
+      if (!m) {
         setFetchError("not-found");
+        return;
       }
+      if (!session || m.userId !== session.user?.userId) {
+        setFetchError("forbidden");
+        return;
+      }
+      setMarker(m);
     }
 
     void load();

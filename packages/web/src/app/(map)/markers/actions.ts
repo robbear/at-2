@@ -15,6 +15,24 @@ async function getSessionToken(): Promise<string | null> {
   return jar.get(COOKIE_NAME)?.value ?? null;
 }
 
+// ─── Fetch single marker ──────────────────────────────────────────────────────
+
+export async function fetchMarkerAction(
+  userId: string,
+  timestamp: string,
+): Promise<Marker | null> {
+  try {
+    const res = await fetch(
+      `${getApiUrl()}/api/v1/markers/${encodeURIComponent(userId)}/${encodeURIComponent(timestamp)}`,
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+    return (await res.json()) as Marker;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Presign ─────────────────────────────────────────────────────────────────
 
 export interface PresignResult {
