@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
 import { resolveImageUrl } from "@/lib/r2-url";
@@ -29,11 +30,13 @@ function MdxImage({
 interface MarkerDetailViewProps {
   marker: Marker;
   searchString?: string;
+  isOwner?: boolean;
 }
 
 export async function MarkerDetailView({
   marker,
   searchString = "",
+  isOwner = false,
 }: MarkerDetailViewProps): Promise<ReactElement> {
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
@@ -94,6 +97,15 @@ export async function MarkerDetailView({
           <h1 className="text-3xl font-bold text-slate-900 leading-tight mb-3">
             {marker.title}
           </h1>
+          {isOwner && (
+            <Link
+              href={`/${marker.id}/edit`}
+              className="inline-flex items-center gap-1.5 text-sm text-brand-blue hover:underline mb-3"
+            >
+              <Pencil size={14} />
+              Edit
+            </Link>
+          )}
           <p className="text-sm text-slate-500">
             by{" "}
             <span className="font-medium text-slate-700">{marker.userId}</span>

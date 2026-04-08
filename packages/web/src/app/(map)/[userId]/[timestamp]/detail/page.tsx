@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
 import type { Marker } from "@at-2/shared";
+import { auth } from "@/auth";
 import { MarkerDetailView } from "@/components/markers/MarkerDetailView";
 import { getApiUrl } from "@/lib/api-url";
 import { getBaseUrl } from "@/lib/base-url";
@@ -75,11 +76,16 @@ export default async function MarkerDetailPage({
 }: PageParams): Promise<ReactElement> {
   const { userId, timestamp } = await params;
   const resolvedSearch = await searchParams;
-  const marker = await fetchMarker(userId, timestamp);
+  const [marker, session] = await Promise.all([
+    fetchMarker(userId, timestamp),
+    auth(),
+  ]);
 
   if (!marker) {
     notFound();
   }
+
+  const isOwner = session?.user?.userId === marker.userId;
 
   const searchString = new URLSearchParams(
     Object.entries(resolvedSearch).flatMap(([k, v]) =>
@@ -87,5 +93,11 @@ export default async function MarkerDetailPage({
     ),
   ).toString();
 
-  return <MarkerDetailView marker={marker} searchString={searchString} />;
+  return (
+    <MarkerDetailView
+      marker={marker}
+      searchString={searchString}
+      isOwner={isOwner}
+    />
+  );
 }
