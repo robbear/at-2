@@ -134,16 +134,28 @@ export function MapShell({
     selectedMarkerId,
   };
 
+  // Editor routes have their own map — skip the persistent map entirely.
+  // Keeping the main map alive alongside the editor map causes two concurrent
+  // Mapbox GL instances and React lifecycle conflicts. The cost of one extra
+  // map load on entering/leaving the editor is acceptable.
+  if (isEditor) {
+    return (
+      <div className="absolute inset-0 bg-surface overflow-auto">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       {/* Persistent map */}
       <div
         className={cn(
           "absolute transition-all duration-300",
-          !hasPreview && !isDetail && !isEditor && "inset-0",
+          !hasPreview && !isDetail && "inset-0",
           hasPreview &&
             "top-0 left-0 right-0 bottom-[45%] lg:bottom-0 lg:right-[40%]",
-          (isDetail || isEditor) && "inset-0 invisible",
+          isDetail && "inset-0 invisible",
         )}
       >
         {provider === "mapbox" ? (
@@ -181,17 +193,6 @@ export function MapShell({
         )}
       >
         {isDetail && children}
-      </div>
-
-      {/* Editor overlay — full screen over map */}
-      <div
-        className={cn(
-          "absolute inset-0 bg-surface z-10",
-          "transition-opacity duration-300",
-          isEditor ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
-      >
-        {isEditor && children}
       </div>
     </div>
   );
