@@ -62,28 +62,18 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
         credentials: {
           accessKeyId: env.R2_ACCESS_KEY_ID,
           secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-        },
-        // AWS SDK v3 adds CRC32 checksums by default; R2 does not support them
-        // and they bloat preflight CORS requirements. Disable here.
-        requestChecksumCalculation: "WHEN_REQUIRED",
-        responseChecksumValidation: "WHEN_REQUIRED",
+        }
       });
 
-      const command = new PutObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
-        Key: r2Path,
-        ContentType: contentType,
-      });
-
-      // The S3 presigner hardcodes content-type into unsignableHeaders, so it
-      // is never included in X-Amz-SignedHeaders. R2 rejects the browser PUT
-      // with 403 when the request contains an unsigned content-type header.
-      // signableHeaders overrides unsignableHeaders, restoring content-type to
-      // the signature and producing X-Amz-SignedHeaders=content-type;host.
-      const uploadUrl = await getSignedUrl(client, command, {
-        expiresIn: 300,
-        signableHeaders: new Set(["content-type"]),
-      });
+      const uploadUrl = await getSignedUrl(
+        client,
+        new PutObjectCommand({
+          Bucket: env.R2_BUCKET_NAME,
+          Key: r2Path,
+          ContentType: contentType,
+        }),
+        { expiresIn: 3600 },
+      );
 
       return reply.status(200).send({
         uploadUrl,
