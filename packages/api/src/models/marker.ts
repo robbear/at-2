@@ -36,6 +36,7 @@ const markerSchema = new Schema<MarkerDoc>(
     images: {
       type: [
         {
+          _id: false,
           name: { type: String, required: true },
           r2Path: { type: String, required: true },
         },
