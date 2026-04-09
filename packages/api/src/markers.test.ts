@@ -570,7 +570,7 @@ describe("Markers, profiles, and upload routes", () => {
     });
 
     it("returns presigned URL for marker image with correct r2Path", async () => {
-      const ts = 1700000000000;
+      const ts = "20231114220000000";
       const res = await supertest(app.server)
         .post("/api/v1/upload/presign")
         .set("Authorization", `Bearer ${aliceJwt}`)
@@ -581,11 +581,11 @@ describe("Markers, profiles, and upload routes", () => {
           markerTimestamp: ts,
         });
       expect(res.status).toBe(200);
-      expect(res.body.r2Path).toBe(`accounts/alice/images/${ts}/photo.jpg`);
+      expect(res.body.r2Path).toBe(`accounts/alice/${ts}/photo.jpg`);
     });
 
     it("returns presigned URL for marker MDX content with correct r2Path", async () => {
-      const ts = 1700000000000;
+      const ts = "20231114220000000";
       const res = await supertest(app.server)
         .post("/api/v1/upload/presign")
         .set("Authorization", `Bearer ${aliceJwt}`)
@@ -596,7 +596,7 @@ describe("Markers, profiles, and upload routes", () => {
           markerTimestamp: ts,
         });
       expect(res.status).toBe(200);
-      expect(res.body.r2Path).toBe(`accounts/alice/html/${ts}.mdx`);
+      expect(res.body.r2Path).toBe(`accounts/alice/${ts}/content.mdx`);
     });
   });
 });
