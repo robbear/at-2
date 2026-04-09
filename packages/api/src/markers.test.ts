@@ -128,6 +128,29 @@ describe("Markers, profiles, and upload routes", () => {
       expect(res.body.tags).toEqual(["hiking", "california"]);
       expect(res.body.draft).toBe(false);
       expect(res.body.deleted).toBe(false);
+      expect(res.body.images).toEqual([]); // default empty images array
+    });
+
+    it("stores images array on create", async () => {
+      const images = [
+        { name: "1.jpg", r2Path: "accounts/alice/images/1700000001/1.jpg" },
+        { name: "2.jpg", r2Path: "accounts/alice/images/1700000001/2.jpg" },
+      ];
+      const res = await supertest(app.server)
+        .post("/api/v1/markers")
+        .set("Authorization", `Bearer ${aliceJwt}`)
+        .send({
+          title: "Marker with images",
+          location: { type: "Point", coordinates: [-122.0839, 37.3861] },
+          datetime: "2024-06-15T00:00:00Z",
+          images,
+          snippetImage: "accounts/alice/images/1700000001/1.jpg",
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.images).toEqual(images);
+      expect(res.body.snippetImage).toBe(
+        "accounts/alice/images/1700000001/1.jpg",
+      );
     });
 
     it("creates a draft marker when draft=true", async () => {
@@ -247,6 +270,23 @@ describe("Markers, profiles, and upload routes", () => {
         .send({ archived: true });
       expect(res.status).toBe(200);
       expect(res.body.archived).toBe(true);
+    });
+
+    it("owner can update images and snippetImage", async () => {
+      const [userId, timestamp] = markerId.split("/");
+      const images = [
+        { name: "1.jpg", r2Path: "accounts/alice/images/9999/1.jpg" },
+      ];
+      const res = await supertest(app.server)
+        .put(`/api/v1/markers/${userId}/${timestamp}`)
+        .set("Authorization", `Bearer ${aliceJwt}`)
+        .send({
+          images,
+          snippetImage: "accounts/alice/images/9999/1.jpg",
+        });
+      expect(res.status).toBe(200);
+      expect(res.body.images).toEqual(images);
+      expect(res.body.snippetImage).toBe("accounts/alice/images/9999/1.jpg");
     });
   });
 
@@ -530,7 +570,7 @@ describe("Markers, profiles, and upload routes", () => {
     });
 
     it("returns presigned URL for marker image with correct r2Path", async () => {
-      const ts = 1700000000000;
+      const ts = "20231114220000000";
       const res = await supertest(app.server)
         .post("/api/v1/upload/presign")
         .set("Authorization", `Bearer ${aliceJwt}`)
@@ -541,11 +581,11 @@ describe("Markers, profiles, and upload routes", () => {
           markerTimestamp: ts,
         });
       expect(res.status).toBe(200);
-      expect(res.body.r2Path).toBe(`accounts/alice/images/${ts}/photo.jpg`);
+      expect(res.body.r2Path).toBe(`accounts/alice/${ts}/photo.jpg`);
     });
 
     it("returns presigned URL for marker MDX content with correct r2Path", async () => {
-      const ts = 1700000000000;
+      const ts = "20231114220000000";
       const res = await supertest(app.server)
         .post("/api/v1/upload/presign")
         .set("Authorization", `Bearer ${aliceJwt}`)
@@ -556,7 +596,7 @@ describe("Markers, profiles, and upload routes", () => {
           markerTimestamp: ts,
         });
       expect(res.status).toBe(200);
-      expect(res.body.r2Path).toBe(`accounts/alice/html/${ts}.mdx`);
+      expect(res.body.r2Path).toBe(`accounts/alice/${ts}/content.mdx`);
     });
   });
 });

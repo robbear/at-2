@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import type { ViewStateChangeEvent } from "react-map-gl/mapbox";
@@ -18,6 +18,14 @@ export function MapboxMap({
 }: MapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // Gate marker rendering on the map being fully initialized. The Marker
+  // component from @vis.gl/react-mapbox calls marker.addTo(map) in a
+  // mount-only useEffect. If the Map component remounts (e.g. after a
+  // Suspense boundary triggers during navigation), the old mapbox-gl Map
+  // instance is destroyed before the new one is ready, causing an
+  // "appendChild on undefined" error. Resetting this flag on mount and
+  // waiting for onLoad ensures Markers only render against a live map.
+  const [mapReady, setMapReady] = useState(false);
 
   // Mapbox GL JS does not detect container resizes driven by CSS transitions.
   // A ResizeObserver on the wrapper fires during the transition and forces
@@ -52,9 +60,10 @@ export function MapboxMap({
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
+        onLoad={() => setMapReady(true)}
         onMoveEnd={handleMoveEnd}
       >
-        {markers.map((marker) => (
+        {mapReady && markers.map((marker) => (
           <Marker
             key={marker.id}
             latitude={marker.lat}

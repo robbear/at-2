@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import cors from "@fastify/cors";
 import { healthRoutes } from "./routes/health.js";
 import { authRoutes } from "./routes/auth.js";
 import { markersRoutes } from "./routes/markers.js";
@@ -10,6 +11,13 @@ import { requireAuth } from "./middleware/auth.js";
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: process.env["NODE_ENV"] !== "test",
+  });
+
+  // Allow requests from the web frontend. APP_URL defaults to localhost:3000
+  // in local dev and is set to the Vercel deployment URL in production/preview.
+  await app.register(cors, {
+    origin: process.env["APP_URL"] ?? "http://localhost:3000",
+    credentials: true,
   });
 
   await app.register(healthRoutes);

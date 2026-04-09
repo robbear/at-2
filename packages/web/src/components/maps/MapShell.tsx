@@ -81,7 +81,10 @@ export function MapShell({
   const provider = selectProvider(providerOverride, mpParam);
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
-  const hasPreview = hasMarker && !isDetail;
+  const isEditor =
+    (pathname?.endsWith("/edit") ?? false) ||
+    (pathname === "/markers/new");
+  const hasPreview = hasMarker && !isDetail && !isEditor;
 
   // Auto-center on selected marker when no lat/lng is present in the URL.
   // Handles the case where initialMarkers updates after mount (client re-fetch)
@@ -130,6 +133,18 @@ export function MapShell({
     onMarkerClick: handleMarkerClick,
     selectedMarkerId,
   };
+
+  // Editor routes have their own map — skip the persistent map entirely.
+  // Keeping the main map alive alongside the editor map causes two concurrent
+  // Mapbox GL instances and React lifecycle conflicts. The cost of one extra
+  // map load on entering/leaving the editor is acceptable.
+  if (isEditor) {
+    return (
+      <div className="absolute inset-0 bg-surface overflow-auto">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden">

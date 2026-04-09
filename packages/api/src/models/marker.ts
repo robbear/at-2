@@ -33,6 +33,16 @@ const markerSchema = new Schema<MarkerDoc>(
       fill: { type: String },
       outline: { type: String },
     },
+    images: {
+      type: [
+        {
+          _id: false,
+          name: { type: String, required: true },
+          r2Path: { type: String, required: true },
+        },
+      ],
+      default: [],
+    },
     draft: { type: Boolean, required: true, default: false },
     archived: { type: Boolean, required: true, default: false },
     deleted: { type: Boolean, required: true, default: false },

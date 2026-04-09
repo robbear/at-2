@@ -1,18 +1,42 @@
 import type { ReactElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
 import { resolveImageUrl } from "@/lib/r2-url";
 
+const r2BaseUrl = process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? "";
+
+function MdxImage({
+  src,
+  alt,
+  images,
+}: {
+  src?: string;
+  alt?: string;
+  images: Marker["images"];
+}): ReactElement {
+  const imageEntry = images?.find((img) => img.name === src);
+  const resolved = imageEntry
+    ? `${r2BaseUrl}/${imageEntry.r2Path}`
+    : (src ?? "");
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={resolved} alt={alt ?? ""} className="max-w-full rounded" />
+  );
+}
+
 interface MarkerDetailViewProps {
   marker: Marker;
   searchString?: string;
+  isOwner?: boolean;
 }
 
 export async function MarkerDetailView({
   marker,
   searchString = "",
+  isOwner = false,
 }: MarkerDetailViewProps): Promise<ReactElement> {
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
@@ -28,6 +52,8 @@ export async function MarkerDetailView({
 
   const imageUrl = resolveImageUrl(marker.snippetImage);
 
+  const markerImages = marker.images ?? [];
+
   let bodyContent: ReactElement;
   if (!marker.markdown || marker.markdown.trim() === "") {
     bodyContent = (
@@ -35,7 +61,14 @@ export async function MarkerDetailView({
     );
   } else {
     try {
-      const { content } = await compileMDX({ source: marker.markdown });
+      const { content } = await compileMDX({
+        source: marker.markdown,
+        components: {
+          img: ({ src, alt }: { src?: string; alt?: string }) => (
+            <MdxImage src={src} alt={alt} images={markerImages} />
+          ),
+        },
+      });
       bodyContent = content;
     } catch {
       // v1 data may contain custom extension syntax (e.g. [[youtube:id]]) that
@@ -64,6 +97,15 @@ export async function MarkerDetailView({
           <h1 className="text-3xl font-bold text-slate-900 leading-tight mb-3">
             {marker.title}
           </h1>
+          {isOwner && (
+            <Link
+              href={`/${marker.id}/edit`}
+              className="inline-flex items-center gap-1.5 text-sm text-brand-blue hover:underline mb-3"
+            >
+              <Pencil size={14} />
+              Edit
+            </Link>
+          )}
           <p className="text-sm text-slate-500">
             by{" "}
             <span className="font-medium text-slate-700">{marker.userId}</span>

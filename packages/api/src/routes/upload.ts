@@ -9,20 +9,19 @@ const PresignRequestSchema = z.object({
   filename: z.string().min(1),
   contentType: z.string().min(1),
   purpose: z.enum(["marker-image", "marker-content", "profile"]),
-  markerTimestamp: z.number().optional(),
+  markerTimestamp: z.string().optional(),
 });
 
 function buildR2Path(
   userId: string,
   purpose: "marker-image" | "marker-content" | "profile",
   filename: string,
-  markerTimestamp?: number
+  markerTimestamp?: string
 ): string {
   switch (purpose) {
     case "marker-image":
-      return `accounts/${userId}/images/${markerTimestamp}/${filename}`;
     case "marker-content":
-      return `accounts/${userId}/html/${markerTimestamp}.mdx`;
+      return `accounts/${userId}/${markerTimestamp}/${filename}`;
     case "profile":
       return `accounts/${userId}/profile/${filename}`;
   }
@@ -62,16 +61,18 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
         credentials: {
           accessKeyId: env.R2_ACCESS_KEY_ID,
           secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-        },
+        }
       });
 
-      const command = new PutObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
-        Key: r2Path,
-        ContentType: contentType,
-      });
-
-      const uploadUrl = await getSignedUrl(client, command, { expiresIn: 300 });
+      const uploadUrl = await getSignedUrl(
+        client,
+        new PutObjectCommand({
+          Bucket: env.R2_BUCKET_NAME,
+          Key: r2Path,
+          ContentType: contentType,
+        }),
+        { expiresIn: 3600 },
+      );
 
       return reply.status(200).send({
         uploadUrl,
