@@ -6,9 +6,21 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
 import { resolveImageUrl } from "@/lib/r2-url";
 
-const MARKER_LINK_RE = /^\/[^/]+\/\d{17}(\/detail)?$/;
-
 const r2BaseUrl = process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? "";
+
+// Internal if: starts with /, has at least two non-empty path segments.
+// Covers v1 (12-digit timestamps), v2 (17-digit), and any future formats.
+function isInternalMarkerLink(href: string): boolean {
+  if (!href.startsWith("/")) return false;
+  const parts = href.replace(/^\//, "").split("/");
+  return parts.length >= 2 && (parts[0]?.length ?? 0) > 0 && (parts[1]?.length ?? 0) > 0;
+}
+
+// Strip leading / and /detail suffix to get the bare markerId.
+// e.g. "/robbearman/20260101120000000/detail" → "robbearman/20260101120000000"
+export function extractMarkerId(href: string): string {
+  return href.replace(/^\//, "").replace(/\/detail$/, "");
+}
 
 function MdxImage({
   src,
@@ -29,35 +41,21 @@ function MdxImage({
   );
 }
 
-const PRESERVED_KEYS = [
-  // QuerySpec
-  "tags", "userIds", "allTags", "markerIds",
-  "near.lat", "near.lng", "near.distance",
-  "dateRange.start", "dateRange.end", "dateRange.usePosttime",
-  // Viewport
-  "lat", "lng", "zoom",
-  // Map provider
-  "mp",
-] as const;
-
 export function buildPreservedParams(
-  searchString: string | undefined,
+  searchString: string,
+  linkedMarkerId: string,
 ): string {
-  if (!searchString) return "";
-  const incoming = new URLSearchParams(searchString);
-  const preserved = new URLSearchParams();
-  for (const key of PRESERVED_KEYS) {
-    const vals = incoming.getAll(key);
-    for (const v of vals) {
-      preserved.append(key, v);
-    }
+  const params = new URLSearchParams(searchString);
+  const existingMarkerIds = params.getAll("markerIds");
+  if (!existingMarkerIds.includes(linkedMarkerId)) {
+    params.append("markerIds", linkedMarkerId);
   }
-  const str = preserved.toString();
+  const str = params.toString();
   return str ? `?${str}` : "";
 }
 
 export function makeAnchorComponent(
-  preservedParams: string,
+  searchString: string,
 ): (props: { href?: string; children?: ReactNode }) => ReactElement {
   return function AnchorComponent({
     href,
@@ -68,9 +66,10 @@ export function makeAnchorComponent(
   }): ReactElement {
     if (!href) return <a>{children}</a>;
 
-    if (MARKER_LINK_RE.test(href)) {
-      const previewHref = href.replace(/\/detail$/, "");
-      const fullHref = `${previewHref}${preservedParams}`;
+    if (isInternalMarkerLink(href)) {
+      const markerId = extractMarkerId(href);
+      const previewHref = `/${markerId}`;
+      const fullHref = `${previewHref}${buildPreservedParams(searchString, markerId)}`;
       return (
         <Link href={fullHref} className="text-brand-blue underline hover:opacity-80">
           {children}
@@ -117,8 +116,7 @@ export async function MarkerDetailView({
   const imageUrl = resolveImageUrl(marker.snippetImage);
 
   const markerImages = marker.images ?? [];
-  const preservedParams = buildPreservedParams(searchString);
-  const AnchorComponent = makeAnchorComponent(preservedParams);
+  const AnchorComponent = makeAnchorComponent(searchString);
 
   let bodyContent: ReactElement;
   if (!marker.markdown || marker.markdown.trim() === "") {

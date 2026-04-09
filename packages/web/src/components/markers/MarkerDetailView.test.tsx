@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import {
   buildPreservedParams,
+  extractMarkerId,
   makeAnchorComponent,
 } from "./MarkerDetailView";
 
@@ -24,78 +25,87 @@ vi.mock("next/link", () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// extractMarkerId
+// ---------------------------------------------------------------------------
+
+describe("extractMarkerId", () => {
+  it("strips leading slash", () => {
+    expect(extractMarkerId("/alice/12345678901234567")).toBe(
+      "alice/12345678901234567",
+    );
+  });
+
+  it("strips /detail suffix", () => {
+    expect(extractMarkerId("/alice/12345678901234567/detail")).toBe(
+      "alice/12345678901234567",
+    );
+  });
+
+  it("handles legacy short timestamps", () => {
+    expect(extractMarkerId("/robbearman/1708900000000")).toBe(
+      "robbearman/1708900000000",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // buildPreservedParams
 // ---------------------------------------------------------------------------
 
 describe("buildPreservedParams", () => {
-  it("returns empty string when searchString is undefined", () => {
-    expect(buildPreservedParams(undefined)).toBe("");
-  });
-
-  it("returns empty string when searchString is empty", () => {
-    expect(buildPreservedParams("")).toBe("");
-  });
-
-  it("preserves viewport params", () => {
-    const result = buildPreservedParams("lat=37.5&lng=-122.1&zoom=10.50");
-    const params = new URLSearchParams(result.slice(1)); // remove leading '?'
-    expect(params.get("lat")).toBe("37.5");
-    expect(params.get("lng")).toBe("-122.1");
-    expect(params.get("zoom")).toBe("10.50");
-  });
-
-  it("preserves map provider param", () => {
-    const result = buildPreservedParams("mp=1");
+  it("returns '?' string with linkedMarkerId appended to markerIds", () => {
+    const result = buildPreservedParams("", "alice/123");
     const params = new URLSearchParams(result.slice(1));
-    expect(params.get("mp")).toBe("1");
+    expect(params.getAll("markerIds")).toContain("alice/123");
   });
 
-  it("preserves QuerySpec params", () => {
+  it("preserves existing params alongside the new markerId", () => {
     const result = buildPreservedParams(
-      "tags=nature&userIds=alice&allTags=true",
+      "lat=37.5&lng=-122.1&zoom=10",
+      "alice/123",
     );
     const params = new URLSearchParams(result.slice(1));
-    expect(params.get("tags")).toBe("nature");
-    expect(params.get("userIds")).toBe("alice");
-    expect(params.get("allTags")).toBe("true");
+    expect(params.get("lat")).toBe("37.5");
+    expect(params.get("lng")).toBe("-122.1");
+    expect(params.get("zoom")).toBe("10");
+    expect(params.getAll("markerIds")).toContain("alice/123");
   });
 
-  it("preserves array params (multiple values for same key)", () => {
+  it("does not duplicate linkedMarkerId when already in markerIds", () => {
+    const input = new URLSearchParams();
+    input.append("markerIds", "alice/123");
+    const result = buildPreservedParams(input.toString(), "alice/123");
+    const params = new URLSearchParams(result.slice(1));
+    expect(params.getAll("markerIds")).toEqual(["alice/123"]);
+  });
+
+  it("appends linkedMarkerId when markerIds has other entries", () => {
+    const input = new URLSearchParams();
+    input.append("markerIds", "bob/456");
+    const result = buildPreservedParams(input.toString(), "alice/123");
+    const params = new URLSearchParams(result.slice(1));
+    expect(params.getAll("markerIds")).toEqual(["bob/456", "alice/123"]);
+  });
+
+  it("preserves array params (multiple tags, userIds)", () => {
     const input = new URLSearchParams();
     input.append("tags", "nature");
     input.append("tags", "history");
     input.append("userIds", "alice");
     input.append("userIds", "bob");
-    const result = buildPreservedParams(input.toString());
+    const result = buildPreservedParams(input.toString(), "alice/123");
     const params = new URLSearchParams(result.slice(1));
     expect(params.getAll("tags")).toEqual(["nature", "history"]);
     expect(params.getAll("userIds")).toEqual(["alice", "bob"]);
   });
 
-  it("excludes unrecognised params", () => {
-    const result = buildPreservedParams("unknown=foo&lat=10&bogus=bar");
-    const params = new URLSearchParams(result.slice(1));
-    expect(params.has("unknown")).toBe(false);
-    expect(params.has("bogus")).toBe(false);
-    expect(params.get("lat")).toBe("10");
-  });
-
-  it("preserves all QuerySpec date range params", () => {
-    const input = "dateRange.start=2024-01-01&dateRange.end=2024-12-31&dateRange.usePosttime=true";
-    const result = buildPreservedParams(input);
-    const params = new URLSearchParams(result.slice(1));
-    expect(params.get("dateRange.start")).toBe("2024-01-01");
-    expect(params.get("dateRange.end")).toBe("2024-12-31");
-    expect(params.get("dateRange.usePosttime")).toBe("true");
-  });
-
-  it("returns empty string when no recognised params are present", () => {
-    const result = buildPreservedParams("foo=bar&baz=qux");
-    expect(result).toBe("");
-  });
-
   it("starts with '?' when params are present", () => {
-    const result = buildPreservedParams("lat=10&lng=20");
+    const result = buildPreservedParams("lat=10", "alice/123");
+    expect(result).toMatch(/^\?/);
+  });
+
+  it("starts with '?' even when searchString is empty (markerId is always added)", () => {
+    const result = buildPreservedParams("", "alice/123");
     expect(result).toMatch(/^\?/);
   });
 });
@@ -105,45 +115,64 @@ describe("buildPreservedParams", () => {
 // ---------------------------------------------------------------------------
 
 describe("makeAnchorComponent", () => {
-  it("renders an internal marker link as a Next.js Link with preserved params", () => {
-    const AnchorComponent = makeAnchorComponent("?lat=37.5&lng=-122.1&zoom=10");
+  it("renders an internal marker link as a Next.js Link with preserved params and markerId", () => {
+    const AnchorComponent = makeAnchorComponent(
+      "lat=37.5&lng=-122.1&zoom=10",
+    );
     render(
       <AnchorComponent href="/robbearman/20260101120000000">
         Next stop
       </AnchorComponent>,
     );
     const link = screen.getByRole("link", { name: "Next stop" });
-    expect(link.getAttribute("href")).toBe(
-      "/robbearman/20260101120000000?lat=37.5&lng=-122.1&zoom=10",
-    );
+    const href = link.getAttribute("href")!;
+    expect(href).toContain("/robbearman/20260101120000000");
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.get("lat")).toBe("37.5");
+    expect(params.get("lng")).toBe("-122.1");
+    expect(params.getAll("markerIds")).toContain("robbearman/20260101120000000");
     expect(link.getAttribute("data-nextlink")).toBe("true");
     expect(link.getAttribute("target")).toBeNull();
   });
 
   it("strips /detail suffix from internal marker links", () => {
-    const AnchorComponent = makeAnchorComponent("?zoom=5");
+    const AnchorComponent = makeAnchorComponent("zoom=5");
     render(
       <AnchorComponent href="/alice/12345678901234567/detail">
         See detail
       </AnchorComponent>,
     );
     const link = screen.getByRole("link", { name: "See detail" });
-    expect(link.getAttribute("href")).toBe(
-      "/alice/12345678901234567?zoom=5",
-    );
+    const href = link.getAttribute("href")!;
+    expect(href).toContain("/alice/12345678901234567");
+    expect(href).not.toContain("/detail");
   });
 
-  it("renders internal marker link without params when preservedParams is empty", () => {
+  it("treats legacy short-timestamp paths as internal links", () => {
     const AnchorComponent = makeAnchorComponent("");
+    render(
+      <AnchorComponent href="/robbearman/1708900000000">Legacy</AnchorComponent>,
+    );
+    const link = screen.getByRole("link", { name: "Legacy" });
+    expect(link.getAttribute("data-nextlink")).toBe("true");
+    const params = new URLSearchParams(link.getAttribute("href")!.split("?")[1]);
+    expect(params.getAll("markerIds")).toContain("robbearman/1708900000000");
+  });
+
+  it("does not duplicate markerId when already in markerIds", () => {
+    const input = new URLSearchParams();
+    input.append("markerIds", "alice/12345678901234567");
+    const AnchorComponent = makeAnchorComponent(input.toString());
     render(
       <AnchorComponent href="/alice/12345678901234567">Link</AnchorComponent>,
     );
-    const link = screen.getByRole("link", { name: "Link" });
-    expect(link.getAttribute("href")).toBe("/alice/12345678901234567");
+    const href = screen.getByRole("link", { name: "Link" }).getAttribute("href")!;
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.getAll("markerIds")).toEqual(["alice/12345678901234567"]);
   });
 
   it("renders external links with target=_blank and rel=noopener noreferrer", () => {
-    const AnchorComponent = makeAnchorComponent("?lat=10");
+    const AnchorComponent = makeAnchorComponent("lat=10");
     render(
       <AnchorComponent href="https://example.com">External</AnchorComponent>,
     );
@@ -154,7 +183,7 @@ describe("makeAnchorComponent", () => {
     expect(link.getAttribute("data-nextlink")).toBeNull();
   });
 
-  it("renders external http links with target=_blank", () => {
+  it("renders http links with target=_blank", () => {
     const AnchorComponent = makeAnchorComponent("");
     render(
       <AnchorComponent href="http://example.com">HTTP link</AnchorComponent>,
@@ -169,13 +198,14 @@ describe("makeAnchorComponent", () => {
     expect(screen.getByText("No href")).toBeInTheDocument();
   });
 
-  it("does not treat non-marker internal paths as marker links", () => {
-    const AnchorComponent = makeAnchorComponent("?lat=10");
+  it("treats single-segment internal paths as external (not marker links)", () => {
+    const AnchorComponent = makeAnchorComponent("lat=10");
     render(
       <AnchorComponent href="/about">About</AnchorComponent>,
     );
-    // /about does not match the marker regex — should be treated as external
+    // /about has only one segment — not a marker link
     const link = screen.getByRole("link", { name: "About" });
     expect(link.getAttribute("data-nextlink")).toBeNull();
+    expect(link.getAttribute("target")).toBe("_blank");
   });
 });
