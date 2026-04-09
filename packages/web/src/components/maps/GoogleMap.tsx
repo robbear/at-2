@@ -15,6 +15,28 @@ interface IdleSyncProps {
   onMove?: (center: { lat: number; lng: number }, zoom: number) => void;
 }
 
+interface MarkerFocusProps {
+  selectedMarkerCoords?: { lat: number; lng: number };
+}
+
+/** Pans to the selected marker coords if they fall outside the current viewport. */
+function MarkerFocus({ selectedMarkerCoords }: MarkerFocusProps): null {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !selectedMarkerCoords) return;
+    const bounds = map.getBounds();
+    if (
+      bounds &&
+      !bounds.contains({ lat: selectedMarkerCoords.lat, lng: selectedMarkerCoords.lng })
+    ) {
+      map.panTo({ lat: selectedMarkerCoords.lat, lng: selectedMarkerCoords.lng });
+    }
+  }, [map, selectedMarkerCoords]);
+
+  return null;
+}
+
 /** Attaches a Google Maps `idle` event listener via the useMap hook. */
 function IdleSync({ onMove }: IdleSyncProps): null {
   const map = useMap();
@@ -46,6 +68,7 @@ export function GoogleMap({
   onMove,
   onMarkerClick,
   selectedMarkerId,
+  selectedMarkerCoords,
 }: MapProps): ReactElement {
   const apiKey = process.env["NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"] ?? "";
 
@@ -80,6 +103,7 @@ export function GoogleMap({
           </AdvancedMarker>
         ))}
         <IdleSync onMove={onMove} />
+        <MarkerFocus selectedMarkerCoords={selectedMarkerCoords} />
       </Map>
     </APIProvider>
   );

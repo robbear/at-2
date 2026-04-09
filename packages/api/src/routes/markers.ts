@@ -60,24 +60,25 @@ export async function markersRoutes(app: FastifyInstance): Promise<void> {
 
     const filter: FilterQuery<object> = { deleted: false, draft: false };
 
+    // Build primary filter conditions (everything except markerIds)
+    const primaryClauses: FilterQuery<object> = {};
+
     if (spec.userIds?.length) {
-      filter["userId"] = { $in: spec.userIds };
-    }
-    if (spec.markerIds?.length) {
-      filter["_id"] = { $in: spec.markerIds };
+      primaryClauses["userId"] = { $in: spec.userIds };
     }
     if (spec.tags?.length) {
-      filter["tags"] = spec.allTags ? { $all: spec.tags } : { $in: spec.tags };
+      primaryClauses["tags"] = spec.allTags ? { $all: spec.tags } : { $in: spec.tags };
     }
     if (spec.dateRange) {
       const field = spec.dateRange.usePosttime ? "posttime" : "datetime";
       const range: Record<string, Date> = {};
       if (spec.dateRange.start) range["$gte"] = new Date(spec.dateRange.start);
       if (spec.dateRange.end) range["$lte"] = new Date(spec.dateRange.end);
-      if (Object.keys(range).length) filter[field] = range;
+      if (Object.keys(range).length) primaryClauses[field] = range;
     }
 
-    // $nearSphere must be the only geospatial operator; apply it to location field.
+    // $nearSphere must be the only geospatial operator; apply it to the base
+    // filter so it remains a top-level condition regardless of $or usage below.
     if (spec.near) {
       filter["location"] = {
         $nearSphere: {
@@ -85,6 +86,18 @@ export async function markersRoutes(app: FastifyInstance): Promise<void> {
           $maxDistance: spec.near.distance,
         },
       };
+    }
+
+    // markerIds are always additive — union with the primary filter result.
+    // When both are present use $or so listed markers are never excluded by
+    // the primary filter (e.g. userIds=nytimes&markerIds=wapo/456 returns
+    // all nytimes markers PLUS wapo/456).
+    if (spec.markerIds?.length && Object.keys(primaryClauses).length > 0) {
+      filter["$or"] = [primaryClauses, { _id: { $in: spec.markerIds } }];
+    } else if (spec.markerIds?.length) {
+      filter["_id"] = { $in: spec.markerIds };
+    } else {
+      Object.assign(filter, primaryClauses);
     }
 
     const markers = await Marker.find(filter).lean({ virtuals: false });

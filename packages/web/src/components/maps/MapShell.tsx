@@ -125,6 +125,27 @@ export function MapShell({
   const selectedMarkerId =
     userId && timestamp ? `${userId}/${timestamp}` : undefined;
 
+  // When the selected marker is absent from the current result set, extend
+  // the QuerySpec by appending its ID to markerIds[]. The API uses union
+  // semantics (markerIds OR other filters), so this is purely additive.
+  // Guard: skip if the marker's userId is already covered by the userIds
+  // filter — in that case the pending re-fetch will include it once done.
+  useEffect(() => {
+    if (!selectedMarkerId || !userId) return;
+    if (initialMarkers.some((m) => m.id === selectedMarkerId)) return;
+    if (searchParams.getAll("userIds").includes(userId)) return;
+    if (searchParams.getAll("markerIds").includes(selectedMarkerId)) return;
+    const p = new URLSearchParams(searchParams.toString());
+    p.append("markerIds", selectedMarkerId);
+    startTransition(() => {
+      router.replace(`?${p.toString()}`);
+    });
+  }, [selectedMarkerId, userId, initialMarkers, searchParams, router]);
+
+  const selectedMarkerCoords = selectedMarkerId
+    ? initialMarkers.find((m) => m.id === selectedMarkerId)
+    : undefined;
+
   const mapProps: MapProps = {
     center: mapCenter,
     zoom: mapZoom,
@@ -132,6 +153,9 @@ export function MapShell({
     onMove: handleMove,
     onMarkerClick: handleMarkerClick,
     selectedMarkerId,
+    selectedMarkerCoords: selectedMarkerCoords
+      ? { lat: selectedMarkerCoords.lat, lng: selectedMarkerCoords.lng }
+      : undefined,
   };
 
   // Editor routes have their own map — skip the persistent map entirely.
