@@ -22,7 +22,11 @@ import {
 } from "@/app/(map)/markers/actions";
 import { toMarkerTimestamp } from "@at-2/shared";
 import { ImageGrid, type LocalImage } from "./ImageGrid";
-import { assignNames, computeNewCoverAfterRemoval } from "./imageUtils";
+import {
+  assignNames,
+  computeNewCoverAfterRemoval,
+  resolveSnippetImageForSave,
+} from "./imageUtils";
 
 const EditorMap = dynamic(
   () => import("./EditorMap").then((m) => ({ default: m.EditorMap })),
@@ -266,8 +270,11 @@ export function EditorView({
   }
 
   function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: string) {
-    const coverImage = uploadedImages.find((img) => img.name === coverName);
-    const snippetImagePath = coverImage?.r2Path ?? "";
+    const snippetImagePath = resolveSnippetImageForSave(
+      uploadedImages,
+      coverName,
+      marker?.snippetImage,
+    );
 
     return {
       title,

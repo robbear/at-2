@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { assignNames, computeNewCoverAfterRemoval } from "./imageUtils";
+import {
+  assignNames,
+  computeNewCoverAfterRemoval,
+  resolveSnippetImageForSave,
+} from "./imageUtils";
 import type { LocalImage } from "./ImageGrid";
 
 function makeImage(name: string, index: number): LocalImage {
@@ -79,5 +83,24 @@ describe("computeNewCoverAfterRemoval", () => {
     // Cover is 1.jpg; remove it
     const newCover = computeNewCoverAfterRemoval(imgs, "1.jpg", 0);
     expect(newCover).toBe("1.jpg"); // previously "2.jpg", renumbered to "1.jpg"
+  });
+});
+
+describe("resolveSnippetImageForSave", () => {
+  it("uses the selected cover image r2Path when available", () => {
+    const images = makeImages(2);
+    expect(resolveSnippetImageForSave(images, "2.jpg", "https://legacy.example/2.jpg")).toBe(
+      "path/2.jpg",
+    );
+  });
+
+  it("preserves a legacy fully qualified snippetImage when no replacement exists", () => {
+    expect(
+      resolveSnippetImageForSave([], "1.jpg", "https://s3.amazonaws.com/bucket/legacy.jpg"),
+    ).toBe("https://s3.amazonaws.com/bucket/legacy.jpg");
+  });
+
+  it("clears snippetImage when there is no cover image and no legacy URL to preserve", () => {
+    expect(resolveSnippetImageForSave([], "", "accounts/alice/images/1.jpg")).toBe("");
   });
 });
