@@ -41,17 +41,8 @@ function MdxImage({
   );
 }
 
-export function buildPreservedParams(
-  searchString: string,
-  linkedMarkerId: string,
-): string {
-  const params = new URLSearchParams(searchString);
-  const existingMarkerIds = params.getAll("markerIds");
-  if (!existingMarkerIds.includes(linkedMarkerId)) {
-    params.append("markerIds", linkedMarkerId);
-  }
-  const str = params.toString();
-  return str ? `?${str}` : "";
+export function buildPreservedParams(searchString: string): string {
+  return searchString ? `?${searchString}` : "";
 }
 
 export function makeAnchorComponent(
@@ -67,9 +58,8 @@ export function makeAnchorComponent(
     if (!href) return <a>{children}</a>;
 
     if (isInternalMarkerLink(href)) {
-      const markerId = extractMarkerId(href);
-      const previewHref = `/${markerId}`;
-      const fullHref = `${previewHref}${buildPreservedParams(searchString, markerId)}`;
+      const previewHref = `/${extractMarkerId(href)}`;
+      const fullHref = `${previewHref}${buildPreservedParams(searchString)}`;
       return (
         <Link href={fullHref} className="text-brand-blue underline hover:opacity-80">
           {children}

@@ -453,6 +453,38 @@ describe("Markers, profiles, and upload routes", () => {
       expect((res.body as Array<{ id: string }>)[0].id).toBe(target);
     });
 
+    it("markerIds + userIds returns union (not intersection)", async () => {
+      // searchMarkers[0] and [1] are Alice's; [2] is Bob's
+      // Query: userIds=alice + markerIds=bob's marker
+      // Expected: ALL Alice markers + Bob's explicitly listed marker
+      const bobMarkerId = searchMarkers[2];
+      const res = await supertest(app.server).get(
+        `/api/v1/markers?userIds=alice&markerIds=${encodeURIComponent(bobMarkerId)}`
+      );
+      expect(res.status).toBe(200);
+      const ids = (res.body as Array<{ id: string }>).map((m) => m.id);
+      // Alice's markers must be present
+      expect(ids).toContain(searchMarkers[0]);
+      expect(ids).toContain(searchMarkers[1]);
+      // Bob's explicitly listed marker must also be present
+      expect(ids).toContain(bobMarkerId);
+    });
+
+    it("markerIds + tags returns union (not intersection)", async () => {
+      // searchMarkers[2] is Bob's NYC marker with tags [nyc, urban]
+      // Query: tags=hiking + markerIds=Bob's NYC marker
+      // Expected: Alice's hiking markers + Bob's explicitly listed marker
+      const bobMarkerId = searchMarkers[2];
+      const res = await supertest(app.server).get(
+        `/api/v1/markers?tags=hiking&markerIds=${encodeURIComponent(bobMarkerId)}`
+      );
+      expect(res.status).toBe(200);
+      const ids = (res.body as Array<{ id: string }>).map((m) => m.id);
+      expect(ids).toContain(searchMarkers[0]); // Alice hiking marker
+      expect(ids).toContain(bobMarkerId);       // Bob's marker (explicitly listed)
+      expect(ids).not.toContain(searchMarkers[1]); // Alice trails (no "hiking" tag)
+    });
+
     it("filters by dateRange", async () => {
       const res = await supertest(app.server).get(
         "/api/v1/markers?dateRange.start=2024-01-01&dateRange.end=2024-02-28"
