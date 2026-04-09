@@ -51,3 +51,27 @@ export function computeNewCoverAfterRemoval(
   // Cover was after the removed index — name unchanged
   return coverName;
 }
+
+/**
+ * Resolves the snippetImage value to persist for an editor save.
+ *
+ * Legacy v1 markers may still store a fully qualified S3 URL in snippetImage
+ * without a corresponding entry in `images`. If the user has not selected a
+ * replacement cover from uploaded R2-backed images, preserve that legacy URL.
+ */
+export function resolveSnippetImageForSave(
+  images: LocalImage[],
+  coverName: string,
+  existingSnippetImage?: string,
+): string {
+  const coverImage = images.find((img) => img.name === coverName);
+  if (coverImage?.r2Path) {
+    return coverImage.r2Path;
+  }
+
+  if (existingSnippetImage?.startsWith("http://") || existingSnippetImage?.startsWith("https://")) {
+    return existingSnippetImage;
+  }
+
+  return "";
+}
