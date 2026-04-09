@@ -96,3 +96,25 @@ Example:
 
 Can be combined with any other query params. Overridden by `MAP_PROVIDER_OVERRIDE`
 env var if set.
+
+---
+
+## Marker cross-links in MDX content
+
+Authors can link between markers using standard markdown link syntax:
+
+```md
+[Link text](/userId/timestamp)
+```
+
+When rendered in the detail view, internal marker links:
+
+- Navigate to the linked marker's **preview state** (not detail view) — `/detail`
+  suffix is stripped automatically
+- Preserve **all current URL params**: QuerySpec (`tags`, `userIds`, etc.) AND
+  viewport params (`lat`, `lng`, `zoom`, `mp`) — the full URL is always shareable
+- Move the map **only if the linked marker is outside the current viewport**;
+  otherwise the map stays in place
+- The URL always reflects complete reproducible state
+
+External links (`http`/`https`) open in a new tab.

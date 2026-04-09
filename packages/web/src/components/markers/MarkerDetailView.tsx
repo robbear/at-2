@@ -1,10 +1,12 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
 import { resolveImageUrl } from "@/lib/r2-url";
+
+const MARKER_LINK_RE = /^\/[^/]+\/\d{17}(\/detail)?$/;
 
 const r2BaseUrl = process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? "";
 
@@ -25,6 +27,68 @@ function MdxImage({
     // eslint-disable-next-line @next/next/no-img-element
     <img src={resolved} alt={alt ?? ""} className="max-w-full rounded" />
   );
+}
+
+const PRESERVED_KEYS = [
+  // QuerySpec
+  "tags", "userIds", "allTags", "markerIds",
+  "near.lat", "near.lng", "near.distance",
+  "dateRange.start", "dateRange.end", "dateRange.usePosttime",
+  // Viewport
+  "lat", "lng", "zoom",
+  // Map provider
+  "mp",
+] as const;
+
+export function buildPreservedParams(
+  searchString: string | undefined,
+): string {
+  if (!searchString) return "";
+  const incoming = new URLSearchParams(searchString);
+  const preserved = new URLSearchParams();
+  for (const key of PRESERVED_KEYS) {
+    const vals = incoming.getAll(key);
+    for (const v of vals) {
+      preserved.append(key, v);
+    }
+  }
+  const str = preserved.toString();
+  return str ? `?${str}` : "";
+}
+
+export function makeAnchorComponent(
+  preservedParams: string,
+): (props: { href?: string; children?: ReactNode }) => ReactElement {
+  return function AnchorComponent({
+    href,
+    children,
+  }: {
+    href?: string;
+    children?: ReactNode;
+  }): ReactElement {
+    if (!href) return <a>{children}</a>;
+
+    if (MARKER_LINK_RE.test(href)) {
+      const previewHref = href.replace(/\/detail$/, "");
+      const fullHref = `${previewHref}${preservedParams}`;
+      return (
+        <Link href={fullHref} className="text-brand-blue underline hover:opacity-80">
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-brand-blue underline hover:opacity-80"
+      >
+        {children}
+      </a>
+    );
+  };
 }
 
 interface MarkerDetailViewProps {
@@ -53,6 +117,8 @@ export async function MarkerDetailView({
   const imageUrl = resolveImageUrl(marker.snippetImage);
 
   const markerImages = marker.images ?? [];
+  const preservedParams = buildPreservedParams(searchString);
+  const AnchorComponent = makeAnchorComponent(preservedParams);
 
   let bodyContent: ReactElement;
   if (!marker.markdown || marker.markdown.trim() === "") {
@@ -67,6 +133,7 @@ export async function MarkerDetailView({
           img: ({ src, alt }: { src?: string; alt?: string }) => (
             <MdxImage src={src} alt={alt} images={markerImages} />
           ),
+          a: AnchorComponent,
         },
       });
       bodyContent = content;

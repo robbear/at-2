@@ -125,6 +125,10 @@ export function MapShell({
   const selectedMarkerId =
     userId && timestamp ? `${userId}/${timestamp}` : undefined;
 
+  const selectedMarkerCoords = selectedMarkerId
+    ? initialMarkers.find((m) => m.id === selectedMarkerId)
+    : undefined;
+
   const mapProps: MapProps = {
     center: mapCenter,
     zoom: mapZoom,
@@ -132,6 +136,9 @@ export function MapShell({
     onMove: handleMove,
     onMarkerClick: handleMarkerClick,
     selectedMarkerId,
+    selectedMarkerCoords: selectedMarkerCoords
+      ? { lat: selectedMarkerCoords.lat, lng: selectedMarkerCoords.lng }
+      : undefined,
   };
 
   // Editor routes have their own map — skip the persistent map entirely.

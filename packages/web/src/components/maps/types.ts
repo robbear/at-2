@@ -12,4 +12,5 @@ export interface MapProps {
   onMove?: (center: { lat: number; lng: number }, zoom: number) => void;
   onMarkerClick?: (markerId: string) => void;
   selectedMarkerId?: string;
+  selectedMarkerCoords?: { lat: number; lng: number };
 }

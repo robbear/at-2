@@ -15,6 +15,7 @@ export function MapboxMap({
   onMove,
   onMarkerClick,
   selectedMarkerId,
+  selectedMarkerCoords,
 }: MapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -39,6 +40,18 @@ export function MapboxMap({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!selectedMarkerCoords || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    const bounds = map.getBounds();
+    if (
+      bounds &&
+      !bounds.contains([selectedMarkerCoords.lng, selectedMarkerCoords.lat])
+    ) {
+      map.flyTo({ center: [selectedMarkerCoords.lng, selectedMarkerCoords.lat] });
+    }
+  }, [selectedMarkerCoords]);
 
   const handleMoveEnd = useCallback(
     (evt: ViewStateChangeEvent) => {
