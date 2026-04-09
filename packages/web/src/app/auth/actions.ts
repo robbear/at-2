@@ -1,30 +1,10 @@
 "use server";
 
-import { signIn, signOut } from "../../auth";
+import { signOut } from "../../auth";
 import { RegistrationSchema, PasswordResetRequestSchema, PasswordResetSchema } from "@at-2/shared";
 import { getApiUrl } from "@/lib/api-url";
 import { getBaseUrl } from "@/lib/base-url";
 import { redirect } from "next/navigation";
-import { AuthError, CredentialsSignin } from "next-auth";
-
-export async function signInAction(formData: FormData): Promise<void> {
-  try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: "/",
-    });
-  } catch (err) {
-    if (err instanceof CredentialsSignin) {
-      const code = (err as { code?: string }).code ?? "";
-      redirect(`/auth/signin?error=CredentialsSignin&code=${encodeURIComponent(code)}`);
-    }
-    if (err instanceof AuthError) {
-      redirect(`/auth/error?error=${encodeURIComponent(err.type)}`);
-    }
-    throw err;
-  }
-}
 
 export async function signOutAction(): Promise<void> {
   await signOut({ redirectTo: "/" });

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DM_Sans, Lora } from "next/font/google";
 import "./globals.css";
 import { getBaseUrl } from "@/lib/base-url";
+import { auth } from "@/auth";
 import { Providers } from "@/components/providers";
 
 const dmSans = DM_Sans({
@@ -46,15 +47,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: ReactNode;
-}): ReactNode {
+}): Promise<ReactNode> {
+  const session = await auth();
   return (
     <html lang="en">
       <body className={`${dmSans.variable} ${lora.variable} font-sans`}>
-        <Providers>{children}</Providers>
+        <Providers session={session}>{children}</Providers>
       </body>
     </html>
   );
