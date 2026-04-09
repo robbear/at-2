@@ -56,13 +56,21 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
 
         <nav className="p-4 flex flex-col gap-1">
           {session ? (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="text-left w-full px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700 transition-colors"
-            >
-              Sign out
-            </button>
+            <>
+              <p className="px-3 py-1 text-xs text-slate-500 truncate">
+                Signed in as{" "}
+                <span className="font-medium text-slate-700">
+                  {session.user?.userId ?? session.user?.email}
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="text-left w-full px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700 transition-colors"
+              >
+                Sign out
+              </button>
+            </>
           ) : (
             <>
               <Link
