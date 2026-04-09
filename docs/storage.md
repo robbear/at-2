@@ -17,13 +17,23 @@ stored in Cloudflare R2.
 ## Bucket layout
 
 ```
-accounts/{userId}/images/{timestamp}/{filename}   — marker images
-accounts/{userId}/html/{timestamp}.mdx            — marker MDX content source
-accounts/{userId}/profile/{filename}              — profile picture
+accounts/{userId}/{timestamp}/{filename}   — marker images and content
+accounts/{userId}/profile/{filename}       — profile picture
 ```
 
 - `userId` is the author's public handle
-- `timestamp` matches the marker's creation timestamp (ties content to marker ID)
+- `timestamp` is the marker's creation timestamp in `YYYYMMDDHHMMssSSS` format
+  (17 chars, UTC) — ties all R2 assets to the marker ID, sorts chronologically,
+  and supports sub-second uniqueness for batch marker creation
+- All marker assets (images, MDX content) share a flat folder under the timestamp;
+  no `images/` or `html/` subdirectory distinction
+
+Example paths:
+```
+accounts/robtest/20260409020512345/1.jpg
+accounts/robtest/20260409020512345/2.jpg
+accounts/robtest/profile/avatar.jpg
+```
 
 ---
 

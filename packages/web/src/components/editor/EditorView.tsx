@@ -20,6 +20,7 @@ import {
   updateMarkerAction,
   deleteMarkerAction,
 } from "@/app/(map)/markers/actions";
+import { toMarkerTimestamp } from "@at-2/shared";
 import { ImageGrid, type LocalImage } from "./ImageGrid";
 import { assignNames, computeNewCoverAfterRemoval } from "./imageUtils";
 
@@ -74,7 +75,7 @@ async function resizeImage(file: File, maxPx = 1024): Promise<File> {
 async function uploadImage(
   file: File,
   name: string,
-  markerTimestamp: number,
+  markerTimestamp: string,
 ): Promise<string> {
   // Presign via server action (has access to the httpOnly session cookie)
   const { uploadUrl, r2Path } = await presignUploadAction(
@@ -264,7 +265,7 @@ export function EditorView({
     setCoverName(newCover);
   }
 
-  function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: number) {
+  function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: string) {
     const coverImage = uploadedImages.find((img) => img.name === coverName);
     const snippetImagePath = coverImage?.r2Path ?? "";
 
@@ -297,11 +298,12 @@ export function EditorView({
       return;
     }
 
-    // Determine markerTimestamp
+    // Single timestamp for the entire publish: reuse the marker's existing
+    // timestamp on edit, or generate a new one once for create.
     const markerTimestamp =
       mode === "edit" && marker
-        ? parseInt(marker.id.split("/")[1]!, 10)
-        : Date.now();
+        ? marker.id.split("/")[1]!
+        : toMarkerTimestamp(new Date());
 
     // Phase 1: upload new images
     const newImages = images.filter((img) => img.r2Path === null);
@@ -343,7 +345,7 @@ export function EditorView({
 
   async function saveMarker(
     uploadedImages: LocalImage[],
-    markerTimestamp?: number,
+    markerTimestamp?: string,
   ): Promise<void> {
     setStatus("saving");
     const payload = buildPayload(uploadedImages, markerTimestamp);
@@ -371,7 +373,7 @@ export function EditorView({
     if (!savedPayload) return;
     const { images: imgs, markerTimestamp } = savedPayload as {
       images: LocalImage[];
-      markerTimestamp: number;
+      markerTimestamp: string;
     };
     await saveMarker(imgs, markerTimestamp);
   }

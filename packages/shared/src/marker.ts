@@ -1,5 +1,23 @@
 import { z } from "zod";
 
+/**
+ * Converts a Date to the marker timestamp format: YYYYMMDDHHMMssSSS (17 chars, UTC).
+ * Human-readable in URLs, sorts chronologically, supports sub-second uniqueness
+ * for batch marker creation.
+ */
+export function toMarkerTimestamp(date: Date = new Date()): string {
+  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+  return (
+    date.getUTCFullYear().toString() +
+    pad(date.getUTCMonth() + 1) +
+    pad(date.getUTCDate()) +
+    pad(date.getUTCHours()) +
+    pad(date.getUTCMinutes()) +
+    pad(date.getUTCSeconds()) +
+    pad(date.getUTCMilliseconds(), 3)
+  );
+}
+
 export const GeoPointSchema = z.object({
   type: z.literal("Point"),
   coordinates: z.tuple([z.number(), z.number()]), // [lng, lat]

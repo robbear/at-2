@@ -43,7 +43,7 @@ export interface PresignResult {
 export async function presignUploadAction(
   filename: string,
   contentType: string,
-  markerTimestamp: number,
+  markerTimestamp: string,
 ): Promise<PresignResult> {
   const token = await getSessionToken();
   if (!token) throw new Error("Not authenticated");
