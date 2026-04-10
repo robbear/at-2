@@ -144,6 +144,9 @@ export function EditorView({
     if (!stored) return "#ffffff";
     return stored.startsWith("#") ? stored : `#${stored}`;
   });
+  const [hideSnippetImageInDetails, setHideSnippetImageInDetails] = useState(
+    marker?.hideSnippetImageInDetails ?? false,
+  );
   const [draft, setDraft] = useState(marker?.draft ?? false);
   const [markdown, setMarkdown] = useState(marker?.markdown ?? "");
   const [datetime, setDatetime] = useState(() => {
@@ -300,6 +303,9 @@ export function EditorView({
         .filter((img) => img.r2Path !== null)
         .map((img) => ({ name: img.name, r2Path: img.r2Path! })),
       draft,
+      hideSnippetImageInDetails: hideSnippetImageInDetails
+        ? true
+        : mode === "edit" ? null : undefined,
       markerColors: isCustom
         ? { rgbFill: storedFill, rgbOutline: storedOutline }
         : mode === "edit" ? null : undefined,
@@ -624,6 +630,16 @@ export function EditorView({
               className="hidden"
               onChange={handleFilesSelected}
             />
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer mt-3">
+              <input
+                type="checkbox"
+                checked={hideSnippetImageInDetails}
+                onChange={(e) => setHideSnippetImageInDetails(e.target.checked)}
+                className="rounded"
+                disabled={busy}
+              />
+              Hide cover image in detail view
+            </label>
           </div>
 
           {/* MDX content */}

@@ -51,6 +51,7 @@ export const MarkerSchema = z.object({
   layerUrl: z.string().optional(),
   layerType: z.enum(["kml", "geojson"]).nullable().optional(),
   markerColors: MarkerColorsSchema.nullable().optional(),
+  hideSnippetImageInDetails: z.boolean().optional(),
   draft: z.boolean(),
   archived: z.boolean(),
   deleted: z.boolean(),
@@ -69,12 +70,14 @@ export const CreateMarkerSchema = z.object({
   layerUrl: z.string().optional(),
   layerType: z.enum(["kml", "geojson"]).nullable().optional(),
   markerColors: MarkerColorsSchema.optional(),
+  hideSnippetImageInDetails: z.boolean().optional(),
   draft: z.boolean().default(false),
 });
 
 export const UpdateMarkerSchema = CreateMarkerSchema.partial().extend({
   archived: z.boolean().optional(),
   markerColors: MarkerColorsSchema.nullable().optional(),
+  hideSnippetImageInDetails: z.boolean().nullable().optional(),
 });
 
 export type GeoPoint = z.infer<typeof GeoPointSchema>;

@@ -169,7 +169,7 @@ export async function MarkerDetailView({
           </p>
         </header>
 
-        {imageUrl && (
+        {imageUrl && !marker.hideSnippetImageInDetails && (
           <div className="relative w-full aspect-video mb-6 rounded-lg overflow-hidden">
             <Image
               src={imageUrl}
