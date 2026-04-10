@@ -134,12 +134,16 @@ export function EditorView({
   const [snippetText, setSnippetText] = useState(marker?.snippetText ?? "");
   const [tags, setTags] = useState<string[]>(marker?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
-  const [markerColor, setMarkerColor] = useState(
-    marker?.markerColors?.rgbFill ?? "#0094dd",
-  );
-  const [markerOutlineColor, setMarkerOutlineColor] = useState(
-    marker?.markerColors?.rgbOutline ?? "#ffffff",
-  );
+  const [markerColor, setMarkerColor] = useState(() => {
+    const stored = marker?.markerColors?.rgbFill;
+    if (!stored) return "#0094dd";
+    return stored.startsWith("#") ? stored : `#${stored}`;
+  });
+  const [markerOutlineColor, setMarkerOutlineColor] = useState(() => {
+    const stored = marker?.markerColors?.rgbOutline;
+    if (!stored) return "#ffffff";
+    return stored.startsWith("#") ? stored : `#${stored}`;
+  });
   const [draft, setDraft] = useState(marker?.draft ?? false);
   const [markdown, setMarkdown] = useState(marker?.markdown ?? "");
   const [datetime, setDatetime] = useState(() => {
@@ -272,12 +276,19 @@ export function EditorView({
     setCoverName(newCover);
   }
 
+  const DEFAULT_FILL = "0094dd";
+  const DEFAULT_OUTLINE = "ffffff";
+
   function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: string) {
     const snippetImagePath = resolveSnippetImageForSave(
       uploadedImages,
       coverName,
       marker?.snippetImage,
     );
+
+    const storedFill = markerColor.replace(/^#/, "").toLowerCase();
+    const storedOutline = markerOutlineColor.replace(/^#/, "").toLowerCase();
+    const isCustom = storedFill !== DEFAULT_FILL || storedOutline !== DEFAULT_OUTLINE;
 
     return {
       title,
@@ -289,7 +300,9 @@ export function EditorView({
         .filter((img) => img.r2Path !== null)
         .map((img) => ({ name: img.name, r2Path: img.r2Path! })),
       draft,
-      markerColors: { rgbFill: markerColor, rgbOutline: markerOutlineColor },
+      markerColors: isCustom
+        ? { rgbFill: storedFill, rgbOutline: storedOutline }
+        : mode === "edit" ? null : undefined,
       location: {
         type: "Point" as const,
         coordinates: [lng!, lat!],

@@ -184,9 +184,17 @@ export async function markersRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const Marker = getMarkerModel();
+      const updateData = { ...parsed.data } as Record<string, unknown>;
+      const clearMarkerColors = updateData["markerColors"] === null;
+      if (clearMarkerColors) {
+        delete updateData["markerColors"];
+      }
       const marker = await Marker.findOneAndUpdate(
         { _id: markerId, deleted: false },
-        { $set: parsed.data },
+        {
+          $set: updateData,
+          ...(clearMarkerColors && { $unset: { markerColors: 1 } }),
+        },
         { new: true }
       );
 
