@@ -11,6 +11,7 @@ interface MapboxEditorMapProps {
   lat: number | null;
   lng: number | null;
   color?: string;
+  outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
 }
 
@@ -22,6 +23,7 @@ export function MapboxEditorMap({
   lat,
   lng,
   color = "#0094dd",
+  outline = "#ffffff",
   onLocationChange,
 }: MapboxEditorMapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
@@ -83,7 +85,7 @@ export function MapboxEditorMap({
             draggable
             onDragEnd={handleDragEnd}
           >
-            <BaseMarker color={color} selected />
+            <BaseMarker color={color} outline={outline} size={1.25} />
           </Marker>
         )}
       </Map>

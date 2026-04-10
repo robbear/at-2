@@ -14,6 +14,7 @@ interface GoogleEditorMapProps {
   lat: number | null;
   lng: number | null;
   color?: string;
+  outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
 }
 
@@ -25,6 +26,7 @@ export function GoogleEditorMap({
   lat,
   lng,
   color = "#0094dd",
+  outline = "#ffffff",
   onLocationChange,
 }: GoogleEditorMapProps): ReactElement {
   const hasLocation = lat !== null && lng !== null;
@@ -72,7 +74,7 @@ export function GoogleEditorMap({
             draggable
             onDragEnd={handleDragEnd}
           >
-            <BaseMarker color={color} selected />
+            <BaseMarker color={color} outline={outline} size={1.25} />
           </AdvancedMarker>
         )}
       </Map>

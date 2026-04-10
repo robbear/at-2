@@ -21,6 +21,7 @@ export interface EditorMapProps {
   lat: number | null;
   lng: number | null;
   color?: string;
+  outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
   providerOverride?: string;
 }
@@ -29,6 +30,7 @@ export function EditorMap({
   lat,
   lng,
   color = "#0094dd",
+  outline = "#ffffff",
   onLocationChange,
   providerOverride,
 }: EditorMapProps): ReactElement {
@@ -40,6 +42,7 @@ export function EditorMap({
         lat={lat}
         lng={lng}
         color={color}
+        outline={outline}
         onLocationChange={onLocationChange}
       />
     );
@@ -49,6 +52,7 @@ export function EditorMap({
       lat={lat}
       lng={lng}
       color={color}
+      outline={outline}
       onLocationChange={onLocationChange}
     />
   );

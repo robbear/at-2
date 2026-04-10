@@ -3,30 +3,40 @@ import { render } from "@testing-library/react";
 import { BaseMarker } from "./BaseMarker";
 import React from "react";
 
+// Helper: the pin path element (has a fill that isn't "white")
+function pinPath(container: HTMLElement): SVGPathElement | null {
+  return container.querySelector<SVGPathElement>("path");
+}
+
 describe("BaseMarker", () => {
-  it("defaults to brand blue (#0094dd) when no color prop is passed", () => {
+  it("defaults to brand blue fill when no color prop is passed", () => {
     const { container } = render(<BaseMarker />);
-    // Body path is the one with a non-none fill
-    const bodyPath = container.querySelector<SVGPathElement>("path:not([fill='none'])");
-    expect(bodyPath?.getAttribute("fill")).toBe("#0094dd");
+    expect(pinPath(container)?.getAttribute("fill")).toBe("#0094dd");
   });
 
-  it("uses the provided color as fill", () => {
+  it("uses the provided color as fill when unselected", () => {
     const { container } = render(<BaseMarker color="#ff0000" />);
-    const bodyPath = container.querySelector<SVGPathElement>("path:not([fill='none'])");
-    expect(bodyPath?.getAttribute("fill")).toBe("#ff0000");
+    expect(pinPath(container)?.getAttribute("fill")).toBe("#ff0000");
   });
 
-  it("does not render a white ring path when not selected", () => {
+  it("defaults to white outline stroke when no outline prop is passed", () => {
     const { container } = render(<BaseMarker />);
-    const whitePath = container.querySelector("path[stroke='white']");
-    expect(whitePath).toBeNull();
+    expect(pinPath(container)?.getAttribute("stroke")).toBe("#ffffff");
   });
 
-  it("renders an extra white-stroke ring path when selected", () => {
-    const { container } = render(<BaseMarker selected />);
-    const whitePath = container.querySelector("path[stroke='white']");
-    expect(whitePath).not.toBeNull();
+  it("uses the provided outline as stroke when unselected", () => {
+    const { container } = render(<BaseMarker outline="#aabbcc" />);
+    expect(pinPath(container)?.getAttribute("stroke")).toBe("#aabbcc");
+  });
+
+  it("uses brand green fill when selected, ignoring custom color", () => {
+    const { container } = render(<BaseMarker color="#ff0000" selected />);
+    expect(pinPath(container)?.getAttribute("fill")).toBe("#93c572");
+  });
+
+  it("uses white outline when selected, ignoring custom outline", () => {
+    const { container } = render(<BaseMarker outline="#aabbcc" selected />);
+    expect(pinPath(container)?.getAttribute("stroke")).toBe("#ffffff");
   });
 
   it("renders larger when selected", () => {
@@ -39,7 +49,24 @@ describe("BaseMarker", () => {
 
   it("renders an inner white circle dot", () => {
     const { container } = render(<BaseMarker />);
-    const dot = container.querySelector<SVGCircleElement>("circle");
-    expect(dot?.getAttribute("fill")).toBe("white");
+    expect(
+      container.querySelector<SVGCircleElement>("circle")?.getAttribute("fill"),
+    ).toBe("white");
+  });
+
+  it("size prop scales the SVG", () => {
+    const { container: x1 } = render(<BaseMarker size={1} />);
+    const { container: x2 } = render(<BaseMarker size={2} />);
+    const w1 = Number(x1.querySelector("svg")?.getAttribute("width"));
+    const w2 = Number(x2.querySelector("svg")?.getAttribute("width"));
+    expect(w2).toBe(w1 * 2);
+  });
+
+  it("size={1.25} without selected gives same width as selected with size=1", () => {
+    const { container: sizedC } = render(<BaseMarker size={1.25} />);
+    const { container: selectedC } = render(<BaseMarker selected />);
+    expect(sizedC.querySelector("svg")?.getAttribute("width")).toBe(
+      selectedC.querySelector("svg")?.getAttribute("width"),
+    );
   });
 });

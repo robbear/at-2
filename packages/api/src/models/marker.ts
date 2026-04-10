@@ -30,8 +30,8 @@ const markerSchema = new Schema<MarkerDoc>(
     layerUrl: { type: String },
     layerType: { type: String, enum: ["kml", "geojson"], default: null },
     markerColors: {
-      fill: { type: String },
-      outline: { type: String },
+      rgbFill: { type: String },
+      rgbOutline: { type: String },
     },
     images: {
       type: [

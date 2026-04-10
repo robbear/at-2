@@ -98,6 +98,7 @@ export function GoogleMap({
           >
             <BaseMarker
               color={marker.color}
+              outline={marker.outline}
               selected={marker.id === selectedMarkerId}
             />
           </AdvancedMarker>

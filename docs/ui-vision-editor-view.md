@@ -45,7 +45,8 @@ Scrollable. Fields in order:
 1. **Title** — required text input
 2. **Snippet text** — optional single-line text (preview and social description)
 3. **Tags** — chip input; press Enter or "Add" button to add
-4. **Marker color** — color picker for `markerColors.fill`; default `#0094dd`
+4. **Marker fill color** — color picker for `markerColors.rgbFill`; default `#0094dd`
+   **Marker outline color** — color picker for `markerColors.rgbOutline`; default `#ffffff`
 5. **Draft toggle** — checkbox: "Save as draft (not publicly visible)"
 6. **Images** — image upload section (see below)
 7. **Content (MDX)** — plain textarea for raw MDX input

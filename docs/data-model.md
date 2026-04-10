@@ -21,7 +21,7 @@ A marker is a geo-tagged content post. It is the core entity in Atlasphere.
 | `posttime` | `Date` | Creation timestamp (when the marker was posted) |
 | `layerUrl` | `string?` | URL to a KML or GeoJSON map overlay layer |
 | `layerType` | `"kml" \| "geojson" \| null` | Type of the overlay layer |
-| `markerColors` | `{ fill: string, outline: string }?` | Custom RGB pin colors |
+| `markerColors` | `{ rgbFill: string, rgbOutline: string }?` | Custom RGB pin colors |
 | `draft` | `boolean` | If true, not publicly visible |
 | `archived` | `boolean` | Soft-archived, hidden from default views |
 | `deleted` | `boolean` | Soft-deleted |

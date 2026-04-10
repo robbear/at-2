@@ -32,7 +32,7 @@ describe("MarkerSchema", () => {
       ...validMarker,
       layerUrl: "https://example.com/layer.kml",
       layerType: "kml",
-      markerColors: { fill: "#ff0000", outline: "#000000" },
+      markerColors: { rgbFill: "#ff0000", rgbOutline: "#000000" },
     };
     const result = MarkerSchema.safeParse(withOptionals);
     expect(result.success).toBe(true);

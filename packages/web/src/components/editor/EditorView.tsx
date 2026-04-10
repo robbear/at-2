@@ -134,9 +134,16 @@ export function EditorView({
   const [snippetText, setSnippetText] = useState(marker?.snippetText ?? "");
   const [tags, setTags] = useState<string[]>(marker?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
-  const [markerColor, setMarkerColor] = useState(
-    marker?.markerColors?.fill ?? "#0094dd",
-  );
+  const [markerColor, setMarkerColor] = useState(() => {
+    const stored = marker?.markerColors?.rgbFill;
+    if (!stored) return "#0094dd";
+    return stored.startsWith("#") ? stored : `#${stored}`;
+  });
+  const [markerOutlineColor, setMarkerOutlineColor] = useState(() => {
+    const stored = marker?.markerColors?.rgbOutline;
+    if (!stored) return "#ffffff";
+    return stored.startsWith("#") ? stored : `#${stored}`;
+  });
   const [draft, setDraft] = useState(marker?.draft ?? false);
   const [markdown, setMarkdown] = useState(marker?.markdown ?? "");
   const [datetime, setDatetime] = useState(() => {
@@ -269,12 +276,19 @@ export function EditorView({
     setCoverName(newCover);
   }
 
+  const DEFAULT_FILL = "0094dd";
+  const DEFAULT_OUTLINE = "ffffff";
+
   function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: string) {
     const snippetImagePath = resolveSnippetImageForSave(
       uploadedImages,
       coverName,
       marker?.snippetImage,
     );
+
+    const storedFill = markerColor.replace(/^#/, "").toLowerCase();
+    const storedOutline = markerOutlineColor.replace(/^#/, "").toLowerCase();
+    const isCustom = storedFill !== DEFAULT_FILL || storedOutline !== DEFAULT_OUTLINE;
 
     return {
       title,
@@ -286,7 +300,9 @@ export function EditorView({
         .filter((img) => img.r2Path !== null)
         .map((img) => ({ name: img.name, r2Path: img.r2Path! })),
       draft,
-      markerColors: { fill: markerColor, outline: markerColor },
+      markerColors: isCustom
+        ? { rgbFill: storedFill, rgbOutline: storedOutline }
+        : mode === "edit" ? null : undefined,
       location: {
         type: "Point" as const,
         coordinates: [lng!, lat!],
@@ -420,6 +436,7 @@ export function EditorView({
           lat={lat}
           lng={lng}
           color={markerColor}
+          outline={markerOutlineColor}
           onLocationChange={(newLat, newLng) => {
             setLat(newLat);
             setLng(newLng);
@@ -526,22 +543,41 @@ export function EditorView({
             </div>
           </div>
 
-          {/* Marker color */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Marker color
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={markerColor}
-                onChange={(e) => setMarkerColor(e.target.value)}
-                className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
-                disabled={busy}
-              />
-              <span className="text-xs text-slate-500 font-mono">
-                {markerColor}
-              </span>
+          {/* Marker colors */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Marker fill color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={markerColor}
+                  onChange={(e) => setMarkerColor(e.target.value)}
+                  className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
+                  disabled={busy}
+                />
+                <span className="text-xs text-slate-500 font-mono">
+                  {markerColor}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Marker outline color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={markerOutlineColor}
+                  onChange={(e) => setMarkerOutlineColor(e.target.value)}
+                  className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
+                  disabled={busy}
+                />
+                <span className="text-xs text-slate-500 font-mono">
+                  {markerOutlineColor}
+                </span>
+              </div>
             </div>
           </div>
 

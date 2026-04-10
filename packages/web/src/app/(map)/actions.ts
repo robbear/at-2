@@ -50,12 +50,17 @@ export async function fetchMarkersAction(searchString: string): Promise<MarkerDo
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) return [];
     const markers = (await res.json()) as Marker[];
-    return markers.map((m) => ({
-      id: m.id,
-      lat: m.location.coordinates[1],
-      lng: m.location.coordinates[0],
-      ...(m.markerColors !== undefined && { color: m.markerColors.fill }),
-    }));
+    return markers.map((m) => {
+      const rgbFill = m.markerColors?.rgbFill;
+      const rgbOutline = m.markerColors?.rgbOutline;
+      return {
+        id: m.id,
+        lat: m.location.coordinates[1],
+        lng: m.location.coordinates[0],
+        ...(rgbFill && { color: rgbFill.startsWith("#") ? rgbFill : `#${rgbFill}` }),
+        ...(rgbOutline && { outline: rgbOutline.startsWith("#") ? rgbOutline : `#${rgbOutline}` }),
+      };
+    });
   } catch {
     return [];
   }
