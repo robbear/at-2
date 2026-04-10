@@ -24,8 +24,8 @@ export const GeoPointSchema = z.object({
 });
 
 export const MarkerColorsSchema = z.object({
-  fill: z.string(),
-  outline: z.string(),
+  rgbFill: z.string(),
+  rgbOutline: z.string(),
 });
 
 export const MarkerImageSchema = z.object({

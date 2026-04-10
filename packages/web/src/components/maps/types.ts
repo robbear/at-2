@@ -2,7 +2,8 @@ export interface MarkerDot {
   id: string;
   lat: number;
   lng: number;
-  color?: string;
+  color?: string;   // custom fill (rgbFill); defaults to brand blue in BaseMarker
+  outline?: string; // custom outline (rgbOutline); defaults to white in BaseMarker
 }
 
 export interface MapProps {

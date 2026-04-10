@@ -135,7 +135,10 @@ export function EditorView({
   const [tags, setTags] = useState<string[]>(marker?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [markerColor, setMarkerColor] = useState(
-    marker?.markerColors?.fill ?? "#0094dd",
+    marker?.markerColors?.rgbFill ?? "#0094dd",
+  );
+  const [markerOutlineColor, setMarkerOutlineColor] = useState(
+    marker?.markerColors?.rgbOutline ?? "#ffffff",
   );
   const [draft, setDraft] = useState(marker?.draft ?? false);
   const [markdown, setMarkdown] = useState(marker?.markdown ?? "");
@@ -286,7 +289,7 @@ export function EditorView({
         .filter((img) => img.r2Path !== null)
         .map((img) => ({ name: img.name, r2Path: img.r2Path! })),
       draft,
-      markerColors: { fill: markerColor, outline: markerColor },
+      markerColors: { rgbFill: markerColor, rgbOutline: markerOutlineColor },
       location: {
         type: "Point" as const,
         coordinates: [lng!, lat!],
@@ -420,6 +423,7 @@ export function EditorView({
           lat={lat}
           lng={lng}
           color={markerColor}
+          outline={markerOutlineColor}
           onLocationChange={(newLat, newLng) => {
             setLat(newLat);
             setLng(newLng);
@@ -526,22 +530,41 @@ export function EditorView({
             </div>
           </div>
 
-          {/* Marker color */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Marker color
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={markerColor}
-                onChange={(e) => setMarkerColor(e.target.value)}
-                className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
-                disabled={busy}
-              />
-              <span className="text-xs text-slate-500 font-mono">
-                {markerColor}
-              </span>
+          {/* Marker colors */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Marker fill color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={markerColor}
+                  onChange={(e) => setMarkerColor(e.target.value)}
+                  className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
+                  disabled={busy}
+                />
+                <span className="text-xs text-slate-500 font-mono">
+                  {markerColor}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Marker outline color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={markerOutlineColor}
+                  onChange={(e) => setMarkerOutlineColor(e.target.value)}
+                  className="h-9 w-16 border border-slate-300 rounded cursor-pointer"
+                  disabled={busy}
+                />
+                <span className="text-xs text-slate-500 font-mono">
+                  {markerOutlineColor}
+                </span>
+              </div>
             </div>
           </div>
 

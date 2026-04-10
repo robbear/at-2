@@ -87,6 +87,7 @@ export function MapboxMap({
           >
             <BaseMarker
               color={marker.color}
+              outline={marker.outline}
               selected={marker.id === selectedMarkerId}
             />
           </Marker>

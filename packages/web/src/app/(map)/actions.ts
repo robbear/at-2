@@ -54,7 +54,10 @@ export async function fetchMarkersAction(searchString: string): Promise<MarkerDo
       id: m.id,
       lat: m.location.coordinates[1],
       lng: m.location.coordinates[0],
-      ...(m.markerColors !== undefined && { color: m.markerColors.fill }),
+      ...(m.markerColors !== undefined && {
+        color: m.markerColors.rgbFill,
+        outline: m.markerColors.rgbOutline,
+      }),
     }));
   } catch {
     return [];
