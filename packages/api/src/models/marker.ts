@@ -43,6 +43,7 @@ const markerSchema = new Schema<MarkerDoc>(
       ],
       default: [],
     },
+    hideSnippetImageInDetails: { type: Boolean },
     draft: { type: Boolean, required: true, default: false },
     archived: { type: Boolean, required: true, default: false },
     deleted: { type: Boolean, required: true, default: false },
