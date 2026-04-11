@@ -154,7 +154,7 @@ export async function MarkerDetailView({
           </h1>
           {isOwner && (
             <Link
-              href={`/${marker.id}/edit`}
+              href={`/${marker.id}/edit${searchString ? `?${searchString}` : ""}`}
               className="inline-flex items-center gap-1.5 text-sm text-brand-blue hover:underline mb-3"
             >
               <Pencil size={14} />

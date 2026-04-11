@@ -44,7 +44,7 @@ export function MarkerPreviewPanel({
           </h2>
           {isOwner && (
             <Link
-              href={`/${marker.id}/edit`}
+              href={`/${marker.id}/edit${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
               className="shrink-0 p-1 hover:bg-white/20 rounded-md transition-colors text-white"
               aria-label="Edit marker"
             >

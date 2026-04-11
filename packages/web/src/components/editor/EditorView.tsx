@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { ReactElement } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import type { Marker } from "@at-2/shared";
@@ -127,6 +127,8 @@ export function EditorView({
   providerOverride,
 }: EditorViewProps): ReactElement {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchString = searchParams.toString();
   const { data: session } = useSession();
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -392,7 +394,7 @@ export function EditorView({
           payload as Record<string, unknown>,
         );
       }
-      router.push(`/${saved.id}`);
+      router.push(`/${saved.id}${searchString ? `?${searchString}` : ""}`);
     } catch {
       setStatus("save-error");
     }
@@ -413,7 +415,7 @@ export function EditorView({
     const [userId, ts] = marker.id.split("/");
     try {
       await deleteMarkerAction(userId!, ts!);
-      router.push("/");
+      router.push(`/${searchString ? `?${searchString}` : ""}`);
     } catch {
       setStatus("idle");
       alert("Failed to delete marker. Please try again.");

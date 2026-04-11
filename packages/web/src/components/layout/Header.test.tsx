@@ -36,6 +36,11 @@ vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: null, status: "unauthenticated" }),
 }));
 
+// Mock next/navigation so useSearchParams doesn't require a router context
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import React from "react";
 
 describe("Header", () => {
