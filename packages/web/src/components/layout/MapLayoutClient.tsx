@@ -71,7 +71,7 @@ export function MapLayoutClient({
   }, [qsKey]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden">
       <Header
         onSearchToggle={() => setSearchPanelOpen((o) => !o)}
         searchActive={searchActive}

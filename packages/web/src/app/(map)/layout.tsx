@@ -55,7 +55,7 @@ export default async function MapLayout({
 
   return (
     <Suspense
-      fallback={<div className="w-full h-screen bg-slate-100 animate-pulse" />}
+      fallback={<div className="w-full h-dvh bg-slate-100 animate-pulse" />}
     >
       <MapLayoutClient
         initialMarkers={markers}
