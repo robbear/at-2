@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReactElement } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, SlidersHorizontal, Share2, Plus } from "lucide-react";
@@ -17,6 +18,8 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
   const [menuOpen, setMenuOpen] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const searchString = searchParams.toString();
 
   function handleShare(): void {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -57,7 +60,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
           {/* New marker — only when signed in */}
           {session && (
             <Link
-              href="/markers/new"
+              href={`/markers/new${searchString ? `?${searchString}` : ""}`}
               className="text-slate-700 p-2 hover:bg-slate-100 rounded-md transition-colors inline-flex items-center justify-center"
               aria-label="Create new marker"
             >
