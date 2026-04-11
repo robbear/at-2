@@ -10,6 +10,7 @@ export interface MapProps {
   center: { lat: number; lng: number };
   zoom: number;
   markers: MarkerDot[];
+  satellite?: boolean;
   onMove?: (center: { lat: number; lng: number }, zoom: number) => void;
   onMarkerClick?: (markerId: string) => void;
   selectedMarkerId?: string;

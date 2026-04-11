@@ -65,6 +65,7 @@ export function GoogleMap({
   center,
   zoom,
   markers,
+  satellite = false,
   onMove,
   onMarkerClick,
   selectedMarkerId,
@@ -88,6 +89,7 @@ export function GoogleMap({
         gestureHandling="greedy"
         disableDefaultUI={true}
         mapId="atlasphere-main"
+        mapTypeId={satellite ? "hybrid" : "roadmap"}
       >
         {markers.map((marker) => (
           <AdvancedMarker

@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface MenuDrawerProps {
@@ -13,6 +14,20 @@ interface MenuDrawerProps {
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const isSatellite = searchParams.get("maptype") === "1";
+
+  function handleSatelliteToggle(): void {
+    const p = new URLSearchParams(searchParams.toString());
+    if (isSatellite) {
+      p.delete("maptype");
+    } else {
+      p.set("maptype", "1");
+    }
+    router.replace(`?${p.toString()}`);
+    onClose();
+  }
 
   function handleSignOut(): void {
     void signOut({ callbackUrl: "/" });
@@ -94,10 +109,15 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
 
           <button
             type="button"
-            disabled
-            className="text-left w-full px-3 py-2 rounded-md text-slate-400 cursor-not-allowed"
+            onClick={handleSatelliteToggle}
+            className={cn(
+              "text-left w-full px-3 py-2 rounded-md transition-colors",
+              isSatellite
+                ? "bg-brand-blue/10 text-brand-blue font-medium hover:bg-brand-blue/20"
+                : "text-slate-700 hover:bg-slate-100",
+            )}
           >
-            Satellite view (coming soon)
+            {isSatellite ? "Map view" : "Satellite view"}
           </button>
 
           <Link
