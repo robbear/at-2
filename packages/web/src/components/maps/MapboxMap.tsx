@@ -12,6 +12,7 @@ export function MapboxMap({
   center,
   zoom,
   markers,
+  satellite = false,
   onMove,
   onMarkerClick,
   selectedMarkerId,
@@ -72,7 +73,7 @@ export function MapboxMap({
           zoom,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={satellite ? "mapbox://styles/mapbox/satellite-streets-v12" : "mapbox://styles/mapbox/streets-v12"}
         onLoad={() => setMapReady(true)}
         onMoveEnd={handleMoveEnd}
       >

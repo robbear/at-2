@@ -54,6 +54,7 @@ export function MapShell({
   const lngParam = searchParams.get("lng");
   const zoomParam = searchParams.get("zoom");
   const mpParam = searchParams.get("mp");
+  const satellite = searchParams.get("maptype") === "1";
 
   // Derive route params before useState so the initializer can reference them.
   const userId =
@@ -150,6 +151,7 @@ export function MapShell({
     center: mapCenter,
     zoom: mapZoom,
     markers: initialMarkers,
+    satellite,
     onMove: handleMove,
     onMarkerClick: handleMarkerClick,
     selectedMarkerId,
