@@ -117,7 +117,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
                 : "text-slate-700 hover:bg-slate-100",
             )}
           >
-            Satellite view
+            {isSatellite ? "Map view" : "Satellite view"}
           </button>
 
           <Link
