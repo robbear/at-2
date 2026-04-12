@@ -28,10 +28,11 @@ export const metadata: Metadata = {
     template: "%s | Atlasphere",
   },
   description: SITE_DESCRIPTION,
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/images/atlasphere-tab-icon.png",
     shortcut: "/images/atlasphere-tab-icon.png",
-    apple: "/images/atlasphere-tab-icon.png",
+    apple: [{ url: "/images/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
     type: "website",
