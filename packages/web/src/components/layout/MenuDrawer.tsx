@@ -142,14 +142,6 @@ export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDra
               {isGoogle ? "Switch to Mapbox" : "Switch to Google Maps"}
             </button>
           )}
-
-          <Link
-            href="/about"
-            onClick={onClose}
-            className="block px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700 transition-colors"
-          >
-            About
-          </Link>
         </nav>
       </div>
     </>
