@@ -12,9 +12,10 @@ import { MenuDrawer } from "./MenuDrawer";
 interface HeaderProps {
   onSearchToggle?: () => void;
   searchActive?: boolean;
+  canToggleProvider?: boolean;
 }
 
-export function Header({ onSearchToggle, searchActive = false }: HeaderProps): ReactElement {
+export function Header({ onSearchToggle, searchActive = false, canToggleProvider = false }: HeaderProps): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const { data: session } = useSession();
@@ -90,7 +91,7 @@ export function Header({ onSearchToggle, searchActive = false }: HeaderProps): R
         </div>
       </header>
 
-      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} canToggleProvider={canToggleProvider} />
 
       {/* Toast notification */}
       <div
