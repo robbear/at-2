@@ -10,13 +10,15 @@ import { cn } from "@/lib/utils";
 interface MenuDrawerProps {
   open: boolean;
   onClose: () => void;
+  canToggleProvider?: boolean;
 }
 
-export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
+export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDrawerProps): ReactElement {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
   const isSatellite = searchParams.get("maptype") === "1";
+  const isGoogle = searchParams.get("mp") === "0";
 
   function handleSatelliteToggle(): void {
     const p = new URLSearchParams(searchParams.toString());
@@ -24,6 +26,17 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
       p.delete("maptype");
     } else {
       p.set("maptype", "1");
+    }
+    router.replace(`?${p.toString()}`);
+    onClose();
+  }
+
+  function handleProviderToggle(): void {
+    const p = new URLSearchParams(searchParams.toString());
+    if (isGoogle) {
+      p.delete("mp");
+    } else {
+      p.set("mp", "0");
     }
     router.replace(`?${p.toString()}`);
     onClose();
@@ -119,6 +132,16 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps): ReactElement {
           >
             {isSatellite ? "Map view" : "Satellite view"}
           </button>
+
+          {session && canToggleProvider && (
+            <button
+              type="button"
+              onClick={handleProviderToggle}
+              className="text-left w-full px-3 py-2 rounded-md text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              {isGoogle ? "Switch to Mapbox" : "Switch to Google Maps"}
+            </button>
+          )}
 
           <Link
             href="/about"

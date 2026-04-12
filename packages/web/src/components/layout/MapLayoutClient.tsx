@@ -37,6 +37,7 @@ function querySpecString(searchParams: URLSearchParams): string {
 interface MapLayoutClientProps {
   initialMarkers: MarkerDot[];
   providerOverride?: string;
+  canToggleProvider?: boolean;
   defaultLat?: number;
   defaultLng?: number;
   defaultZoom?: number;
@@ -46,6 +47,7 @@ interface MapLayoutClientProps {
 export function MapLayoutClient({
   initialMarkers,
   providerOverride,
+  canToggleProvider = false,
   defaultLat,
   defaultLng,
   defaultZoom,
@@ -75,6 +77,7 @@ export function MapLayoutClient({
       <Header
         onSearchToggle={() => setSearchPanelOpen((o) => !o)}
         searchActive={searchActive}
+        canToggleProvider={canToggleProvider}
       />
       <SearchPanel
         open={searchPanelOpen}
