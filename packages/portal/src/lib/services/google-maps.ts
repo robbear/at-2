@@ -1,26 +1,16 @@
 import type { ServiceReport } from "./types";
 
 /**
- * Fetch Google Maps JS API monthly load count.
+ * Google Maps JS API usage data requires a GCP service account with
+ * Monitoring Viewer role and Cloud Monitoring API access — non-trivial
+ * to set up and in the same boat as Mapbox: better to self-track.
  *
- * TODO: Wire real data via the Google Cloud Monitoring API.
- * The Maps JS API usage is exposed as the metric:
- *   serviceruntime.googleapis.com/api/request_count
- *   filtered by service=maps-backend.googleapis.com
- * Docs: https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.timeSeries/list
- *
- * Auth: Google Cloud service account with "Monitoring Viewer" role.
- * Env vars needed:
- *   GOOGLE_CLOUD_SA_KEY_BASE64 — base64-encoded service account JSON key
- *   GOOGLE_CLOUD_PROJECT_ID    — GCP project ID
- *
- * Alternative: Google Cloud Billing API for cost-based alerting, but
- * Monitoring gives raw load counts which map directly to the 900/month cap.
+ * Map load counts must be self-tracked: increment a counter in MongoDB
+ * each time the Google Maps map initializes on the web side, then read it here.
+ * See: packages/portal/src/lib/services/map-load-counts.ts (TODO)
  */
 export async function fetchGoogleMapsReport(): Promise<ServiceReport> {
   const limit = 900; // hard monthly cap with $1 budget alert
-
-  // TODO: Replace stub with real fetch once SA key is provisioned.
 
   return {
     name: "Google Maps",
@@ -31,11 +21,11 @@ export async function fetchGoogleMapsReport(): Promise<ServiceReport> {
         value: null,
         limit,
         unit: "loads",
-        warningThreshold: 0.7, // warn at 630 loads
-        criticalThreshold: 0.9, // critical at 810 loads
+        warningThreshold: 0.7,
+        criticalThreshold: 0.9,
       },
     ],
     lastChecked: new Date(),
-    note: "API integration pending — needs GOOGLE_CLOUD_SA_KEY_BASE64",
+    note: "Requires self-tracking — Cloud Monitoring API requires GCP service account",
   };
 }

@@ -1,25 +1,17 @@
 import type { ServiceReport } from "./types";
 
 /**
- * Fetch Mapbox monthly map load count.
+ * Mapbox Statistics API (statistics/v1/{username}/map-loads) returns
+ * 401 "Direct access not allowed" regardless of token scopes — it is a
+ * private/internal API used only by Mapbox's own dashboard.
  *
- * TODO: Wire real data via the Mapbox Statistics API.
- * Docs: https://docs.mapbox.com/api/accounts/statistics/
- * Token: MAPBOX_SECRET_TOKEN (sk.* — not the public pk.* token)
- * Required scope: statistics:read
- *
- * Example response shape:
- *   GET https://api.mapbox.com/statistics/v1/usage?month=YYYY-MM
- *   Authorization: Bearer sk.***
- *   { "resources": [{ "resource_type": "StylesLoad", "count": 12345 }] }
+ * Map load counts must be self-tracked: increment a counter in MongoDB
+ * each time the Mapbox map initializes on the web side, then read it here.
+ * See: packages/portal/src/lib/services/map-load-counts.ts (TODO)
  */
 export async function fetchMapboxReport(): Promise<ServiceReport> {
   const limit = 50_000;
   const alertThreshold = parseInt(process.env.MAPBOX_ALERT_THRESHOLD ?? "40000", 10);
-
-  // TODO: Replace stub with real fetch once MAPBOX_SECRET_TOKEN is provisioned.
-  // const token = process.env.MAPBOX_SECRET_TOKEN;
-  // if (token) { ... fetch real data ... }
 
   return {
     name: "Mapbox",
@@ -35,6 +27,6 @@ export async function fetchMapboxReport(): Promise<ServiceReport> {
       },
     ],
     lastChecked: new Date(),
-    note: "API integration pending — needs MAPBOX_SECRET_TOKEN",
+    note: "Requires self-tracking — Mapbox Statistics API is not publicly accessible",
   };
 }
