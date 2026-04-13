@@ -15,6 +15,7 @@ import {
   usePathname,
 } from "next/navigation";
 import dynamic from "next/dynamic";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { selectProvider } from "@/lib/map/provider-select";
 import { cn } from "@/lib/utils";
 import { MarkerListPanel } from "@/components/markers/MarkerListPanel";
@@ -372,11 +373,17 @@ export function MapShell({
       {!isDetail && (
         <button
           type="button"
-          className="shrink-0 h-12 flex items-center justify-center border-t border-slate-200 bg-surface hover:bg-surface-muted transition-colors text-sm text-slate-600 font-medium w-full"
+          className={cn(
+            "shrink-0 h-12 flex items-center justify-center gap-2 border-t transition-colors text-sm font-medium w-full",
+            listOpen
+              ? "bg-brand-blue text-white border-brand-blue hover:bg-brand-blue/90"
+              : "bg-surface text-slate-600 border-slate-200 hover:bg-surface-muted",
+          )}
           onClick={() => setListOpen((o) => !o)}
           aria-expanded={listOpen}
           aria-label={listOpen ? "Hide marker list" : "Show marker list"}
         >
+          {listOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           {footerLabel}
         </button>
       )}

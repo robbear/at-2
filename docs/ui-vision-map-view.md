@@ -22,13 +22,17 @@ From a technical standpoint, the map markers rendered on the map reflect the sea
 The map is bounded at the top by a header showing the Atlasphere logo, and icons for the search interface, the editor interface (when a user is signed in), URL sharing, and the menu.
 It is bounded at the bottom by a footer of the same vertical dimensions as the header.
 The footer shows, centered, the number of markers displayed on the map (we may add more information in the footer later).
-When the user clicks or taps on the footer, the marker selector list is revealed fully to the extent under the header, covering the map.
+A directional chevron icon accompanies the count: pointing up (↑) when the list is hidden to invite opening, pointing down (↓) when the list is visible to signal that tapping again will dismiss it.
+When the list is open the footer also changes its visual treatment (highlighted background, contrasting text) to reinforce that it is an active control.
+
+When the user clicks or taps on the footer, the marker selector list is revealed in the area between the header and the footer.
+The footer remains pinned at the bottom of the screen at all times — it does not move to become the top of the list.
 The marker selector becomes a means by which the user can see a list of all the markers on the map, listed in reverse-chronological order by creation date, rendered by each marker's snippetImage and snippetText, and including author information and creation date.
 Layout appropriate views are used for each item in the list (image to the left and snippet text to the right in wide screen layouts, image over text in mobile).
-Tapping on the list item behaves the same as tapping on a map marker - it reveals the map in selected marker + preview mode, removing the list view.
-The list view does not affect page/URL state in the same way that tapping on the menu icon does not.
-The top of the list view is the same as the footer view - the number of markers active on the map.
-The list of marker snippet information scrolls under that pinned footer view, and if the user taps on the footer view again, the list is dismissed, revealing the map again with the footer returning to its place at the bottom of the screen.
+Tapping on a list item behaves the same as tapping on a map marker — it navigates to the selected marker + preview mode and removes the list view.
+Swiping a list item to the left past a threshold (approximately half the item width) is an alternative gesture for dismissing the list, identical in outcome to tapping the footer.
+The list view does not affect page/URL state.
+Tapping the footer again dismisses the list, revealing the map with the footer in its usual position at the bottom of the screen.
 
 ## Map View and Marker Preview
 
