@@ -364,6 +364,7 @@ export function MapShell({
                 setListOpen(false);
                 handleMarkerClick(id);
               }}
+              onDismiss={() => setListOpen(false)}
             />
           </div>
         )}
