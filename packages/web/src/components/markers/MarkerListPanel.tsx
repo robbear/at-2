@@ -5,6 +5,11 @@ import type { ReactElement } from "react";
 import type { MarkerListItem } from "@/components/maps/types";
 import { resolveImageUrl } from "@/lib/r2-url";
 
+// Horizontal distance (px) required to commit a swipe-right dismiss.
+// Kept as a fixed value so it feels consistent regardless of item width —
+// ~80px is comfortable on a phone without requiring a full arm extension.
+const SWIPE_DISMISS_PX = 80;
+
 interface MarkerListPanelProps {
   markers: MarkerListItem[];
   onSelect: (markerId: string) => void;
@@ -72,7 +77,7 @@ function ListItem({
 
     if (!drag.axisLocked) {
       // Wait for enough movement before committing to an axis.
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
 
       drag.axisLocked = true;
 
@@ -90,6 +95,10 @@ function ListItem({
 
     if (!drag.horizontal) return;
 
+    // Prevent iOS Safari's back-navigation gesture from competing once we've
+    // committed to a horizontal swipe.
+    e.preventDefault();
+
     // Only track rightward movement (negative dx is ignored / clamped to 0).
     const clamped = Math.max(0, dx);
     const el = itemRef.current;
@@ -97,9 +106,8 @@ function ListItem({
 
     el.style.transition = "none";
     el.style.transform = `translateX(${clamped}px)`;
-    // Fade toward half-opacity as it approaches the threshold.
-    const threshold = el.offsetWidth / 2;
-    el.style.opacity = String(Math.max(0.4, 1 - clamped / threshold));
+    // Fade toward half-opacity as it approaches the dismiss threshold.
+    el.style.opacity = String(Math.max(0.4, 1 - clamped / SWIPE_DISMISS_PX));
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLButtonElement>): void {
@@ -110,9 +118,7 @@ function ListItem({
 
     const dx = e.clientX - drag.startX;
     const el = itemRef.current;
-    const threshold = el ? el.offsetWidth / 2 : 120;
-
-    if (dx >= threshold) {
+    if (dx >= SWIPE_DISMISS_PX) {
       // Past the threshold — dismiss the list.
       suppressNextClickRef.current = true;
       onDismiss();
