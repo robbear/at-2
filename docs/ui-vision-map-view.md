@@ -47,11 +47,12 @@ In **Portrait mode**: the view splits vertically — the map shifts to the top h
 and the marker preview occupies the bottom half (or vice versa, potentially
 configurable as a user preference).
 
-In both cases, the views are separated by a splitter that allows the user to size the amount of map versus preview visable, either left-to-right in the landscape case, or top-to-bottom in the portrait case.
-The initial split is 50 percent each.
-The user is constrained to moving the slider such that the preview must take up at least 10 percent of the available space. The user cannot fully eliminate the preview from the viewport.
-However, when the slider moves to the point where the map is reduced to 5 percent of the available space, that action is treated as if the user had tapped on the `Full view` button, resulting in a transition to the detail view.
-That is, a swipe of the slider to eliminate the map and reveal the contents of the preview is to treat it as a gesture that the user wants to see the detail view.
+In both cases, the views are separated by a draggable splitter that allows the user to resize the map and preview areas — left-to-right in landscape, top-to-bottom in portrait.
+
+Splitter constraints:
+- **Initial split**: 50% each.
+- **Minimum preview**: the preview must occupy at least 10% of the available space; the splitter cannot be dragged to fully eliminate the preview.
+- **Map collapse gesture**: when the splitter is dragged such that the map is reduced to 5% or less of the available space, the action is treated as equivalent to tapping the **"Full view"** button — the app transitions to the full Marker Detail View. This gives users a natural swipe gesture to enter the detail view without hunting for a button.
 
 ### Preview Interaction
 
@@ -66,6 +67,8 @@ That is, a swipe of the slider to eliminate the map and reveal the contents of t
 
 ### Preview Content
 
-The marker preview is a compact representation of the marker's fully authored content, the full rendered MDX.
-It is the same as the detail view, just in a smaller view frame.
-See `ui-vision-marker-detail-view.md` for details on the rendered view.
+The marker preview renders the marker's **full MDX content** — the same content as the Marker Detail View, displayed in the smaller side-by-side frame. There is no truncation or snippet-only view; the user can read the complete marker post without navigating away from the map.
+
+The preview panel respects the same content flags as the detail view (e.g. `hideSnippetImageInDetails` suppresses the hero snippet image in both contexts).
+
+The **"Full view"** button and the map-collapse splitter gesture both navigate to the Marker Detail View (`/{userId}/{timestamp}/detail`), which provides a full-screen, immersive reading experience. See `ui-vision-marker-detail-view.md`.
