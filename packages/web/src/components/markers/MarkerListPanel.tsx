@@ -90,8 +90,8 @@ function ListItem({
 
     if (!drag.horizontal) return;
 
-    // Only track leftward movement (positive dx is ignored / clamped to 0).
-    const clamped = Math.min(0, dx);
+    // Only track rightward movement (negative dx is ignored / clamped to 0).
+    const clamped = Math.max(0, dx);
     const el = itemRef.current;
     if (!el) return;
 
@@ -99,7 +99,7 @@ function ListItem({
     el.style.transform = `translateX(${clamped}px)`;
     // Fade toward half-opacity as it approaches the threshold.
     const threshold = el.offsetWidth / 2;
-    el.style.opacity = String(Math.max(0.4, 1 + clamped / threshold));
+    el.style.opacity = String(Math.max(0.4, 1 - clamped / threshold));
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLButtonElement>): void {
@@ -110,9 +110,9 @@ function ListItem({
 
     const dx = e.clientX - drag.startX;
     const el = itemRef.current;
-    const threshold = el ? -(el.offsetWidth / 2) : -120;
+    const threshold = el ? el.offsetWidth / 2 : 120;
 
-    if (dx <= threshold) {
+    if (dx >= threshold) {
       // Past the threshold — dismiss the list.
       suppressNextClickRef.current = true;
       onDismiss();
