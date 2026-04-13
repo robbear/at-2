@@ -146,14 +146,27 @@ export function MapShell({
     }
   }, [latParam, userId, timestamp, initialMarkers]);
 
+  // Defined here (before handleMove) so the callback can read it without a
+  // TypeScript "used before declaration" error. The splitter section below
+  // sets/clears it; the orientation refs stay co-located with the splitter.
+  const draggingRef = useRef(false);
+
   const handleMove = useCallback(
     (center: { lat: number; lng: number }, z: number) => {
-      // The map container resizes (and Mapbox fires moveend) during the
-      // transition to the detail route. Bail out while navigating to or already
-      // in detail to avoid setState/router.replace loops triggered by the
-      // ResizeObserver. navigatingToDetailRef covers the gap between the
-      // router.push call and the pathname actually updating.
-      if (isDetailRef.current || navigatingToDetailRef.current) return;
+      // Skip moveend events that are caused by the map container resizing, not
+      // by the user panning or zooming:
+      //   • draggingRef: splitter is active — container is resizing but the map
+      //     is not being panned; updating lat/lng/zoom in the URL is wrong.
+      //   • navigatingToDetailRef / isDetailRef: covers the window between
+      //     router.push and the pathname actually updating, and the detail state
+      //     itself. Without these, the ResizeObserver → resize() → moveend chain
+      //     causes "Maximum update depth exceeded".
+      if (
+        draggingRef.current ||
+        navigatingToDetailRef.current ||
+        isDetailRef.current
+      )
+        return;
       setMapCenter(center);
       setMapZoom(z);
       startTransition(() => {
@@ -214,7 +227,6 @@ export function MapShell({
   const [isLandscape, setIsLandscape] = useState(false);
   const isLandscapeRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(orientation: landscape)");

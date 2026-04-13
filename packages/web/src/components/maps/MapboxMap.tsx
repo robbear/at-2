@@ -36,7 +36,11 @@ export function MapboxMap({
     const el = wrapperRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      mapRef.current?.resize();
+      // Defer resize() out of the ResizeObserver callback so it never fires
+      // synchronously during React's layout phase. Calling resize() inline can
+      // trigger moveend → handleMove → setState while React is still committing,
+      // which causes "Maximum update depth exceeded".
+      requestAnimationFrame(() => mapRef.current?.resize());
     });
     ro.observe(el);
     return () => ro.disconnect();
