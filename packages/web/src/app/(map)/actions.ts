@@ -1,7 +1,7 @@
 "use server";
 
 import type { Marker } from "@at-2/shared";
-import type { MarkerDot } from "@/components/maps/types";
+import type { MarkerDot, MarkerListItem } from "@/components/maps/types";
 import { getApiUrl } from "@/lib/api-url";
 
 // QuerySpec param keys — used to forward the relevant subset of URL params
@@ -19,7 +19,47 @@ const QUERYSPEC_KEYS = [
   "dateRange.usePosttime",
 ] as const;
 
-export async function fetchMarkersAction(searchString: string): Promise<MarkerDot[]> {
+export interface FetchMarkersResult {
+  dots: MarkerDot[];
+  listItems: MarkerListItem[];
+}
+
+function markersToResult(markers: Marker[]): FetchMarkersResult {
+  const dots: MarkerDot[] = markers.map((m) => {
+    const rgbFill = m.markerColors?.rgbFill;
+    const rgbOutline = m.markerColors?.rgbOutline;
+    return {
+      id: m.id,
+      lat: m.location.coordinates[1],
+      lng: m.location.coordinates[0],
+      ...(rgbFill && { color: rgbFill.startsWith("#") ? rgbFill : `#${rgbFill}` }),
+      ...(rgbOutline && {
+        outline: rgbOutline.startsWith("#") ? rgbOutline : `#${rgbOutline}`,
+      }),
+    };
+  });
+
+  // Sort list items newest-first by posttime.
+  const listItems: MarkerListItem[] = [...markers]
+    .sort(
+      (a, b) =>
+        new Date(b.posttime).getTime() - new Date(a.posttime).getTime(),
+    )
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      snippetImage: m.snippetImage ?? undefined,
+      snippetText: m.snippetText ?? undefined,
+      userId: m.userId,
+      posttime: new Date(m.posttime).toISOString(),
+    }));
+
+  return { dots, listItems };
+}
+
+export async function fetchMarkersAction(
+  searchString: string,
+): Promise<FetchMarkersResult> {
   const incoming = new URLSearchParams(searchString);
   const url = new URL(`${getApiUrl()}/api/v1/markers`);
 
@@ -48,20 +88,10 @@ export async function fetchMarkersAction(searchString: string): Promise<MarkerDo
 
   try {
     const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) return [];
+    if (!res.ok) return { dots: [], listItems: [] };
     const markers = (await res.json()) as Marker[];
-    return markers.map((m) => {
-      const rgbFill = m.markerColors?.rgbFill;
-      const rgbOutline = m.markerColors?.rgbOutline;
-      return {
-        id: m.id,
-        lat: m.location.coordinates[1],
-        lng: m.location.coordinates[0],
-        ...(rgbFill && { color: rgbFill.startsWith("#") ? rgbFill : `#${rgbFill}` }),
-        ...(rgbOutline && { outline: rgbOutline.startsWith("#") ? rgbOutline : `#${rgbOutline}` }),
-      };
-    });
+    return markersToResult(markers);
   } catch {
-    return [];
+    return { dots: [], listItems: [] };
   }
 }
