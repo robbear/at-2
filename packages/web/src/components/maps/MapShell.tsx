@@ -1,8 +1,19 @@
 "use client";
 
-import { useCallback, startTransition, useEffect, useState } from "react";
+import {
+  useCallback,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode, ReactElement } from "react";
-import { useSearchParams, useRouter, useParams, usePathname } from "next/navigation";
+import {
+  useSearchParams,
+  useRouter,
+  useParams,
+  usePathname,
+} from "next/navigation";
 import dynamic from "next/dynamic";
 import { selectProvider } from "@/lib/map/provider-select";
 import { cn } from "@/lib/utils";
@@ -27,6 +38,11 @@ const GoogleMap = dynamic<MapProps>(
 const DEFAULT_LAT = 33.8337;
 const DEFAULT_LNG = -60.8509;
 const DEFAULT_ZOOM = 2;
+
+// Splitter constraints (percentages of the available split axis).
+const SPLIT_DEFAULT = 50;
+const SPLIT_PREVIEW_MIN = 10; // preview cannot be smaller than this
+const SPLIT_MAP_COLLAPSE = 5; // map at or below this → transition to detail view
 
 interface MapShellProps {
   initialMarkers: MarkerDot[];
@@ -56,7 +72,6 @@ export function MapShell({
   const mpParam = searchParams.get("mp");
   const satellite = searchParams.get("maptype") === "1";
 
-  // Derive route params before useState so the initializer can reference them.
   const userId =
     typeof params["userId"] === "string" ? params["userId"] : undefined;
   const timestamp =
@@ -66,8 +81,6 @@ export function MapShell({
     if (latParam !== null) {
       return { lat: parseFloat(latParam), lng: parseFloat(lngParam ?? "0") };
     }
-    // No lat/lng in URL — if a marker is selected, center the map on it.
-    // This handles fresh page loads of /{userId}/{timestamp} without viewport params.
     if (userId && timestamp) {
       const markerId = `${userId}/${timestamp}`;
       const selected = initialMarkers.find((m) => m.id === markerId);
@@ -79,19 +92,24 @@ export function MapShell({
     zoomParam !== null ? parseFloat(zoomParam) : defaultZoom,
   );
 
+  // splitPct is the percentage of the available axis given to the MAP.
+  // Preview occupies (100 - splitPct)%.
+  const [splitPct, setSplitPct] = useState(SPLIT_DEFAULT);
+
   const provider = selectProvider(providerOverride, mpParam);
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
   const isEditor =
-    (pathname?.endsWith("/edit") ?? false) ||
-    (pathname === "/markers/new");
+    (pathname?.endsWith("/edit") ?? false) || pathname === "/markers/new";
   const hasPreview = hasMarker && !isDetail && !isEditor;
 
-  // Auto-center on selected marker when no lat/lng is present in the URL.
-  // Handles the case where initialMarkers updates after mount (client re-fetch)
-  // and the marker wasn't found during the useState initializer.
+  // Reset split to default whenever a new preview opens.
   useEffect(() => {
-    if (latParam !== null) return; // explicit viewport — don't override
+    if (hasPreview) setSplitPct(SPLIT_DEFAULT);
+  }, [hasPreview, userId, timestamp]);
+
+  useEffect(() => {
+    if (latParam !== null) return;
     if (!userId || !timestamp) return;
     const markerId = `${userId}/${timestamp}`;
     const marker = initialMarkers.find((m) => m.id === markerId);
@@ -126,11 +144,6 @@ export function MapShell({
   const selectedMarkerId =
     userId && timestamp ? `${userId}/${timestamp}` : undefined;
 
-  // When the selected marker is absent from the current result set, extend
-  // the QuerySpec by appending its ID to markerIds[]. The API uses union
-  // semantics (markerIds OR other filters), so this is purely additive.
-  // Guard: skip if the marker's userId is already covered by the userIds
-  // filter — in that case the pending re-fetch will include it once done.
   useEffect(() => {
     if (!selectedMarkerId || !userId) return;
     if (initialMarkers.some((m) => m.id === selectedMarkerId)) return;
@@ -160,10 +173,74 @@ export function MapShell({
       : undefined,
   };
 
-  // Editor routes have their own map — skip the persistent map entirely.
-  // Keeping the main map alive alongside the editor map causes two concurrent
-  // Mapbox GL instances and React lifecycle conflicts. The cost of one extra
-  // map load on entering/leaving the editor is acceptable.
+  // -------------------------------------------------------------------------
+  // Splitter drag logic
+  // -------------------------------------------------------------------------
+
+  // isLandscape drives layout (state) and event handler math (ref in sync).
+  const [isLandscape, setIsLandscape] = useState(false);
+  const isLandscapeRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: landscape)");
+    isLandscapeRef.current = mq.matches;
+    setIsLandscape(mq.matches);
+    const onChange = (e: MediaQueryListEvent): void => {
+      isLandscapeRef.current = e.matches;
+      setIsLandscape(e.matches);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const handleSplitterPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      draggingRef.current = true;
+    },
+    [],
+  );
+
+  const handleSplitterPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      let raw: number;
+      if (isLandscapeRef.current) {
+        // Landscape: map is on the left, preview on the right.
+        raw = ((e.clientX - rect.left) / rect.width) * 100;
+      } else {
+        // Portrait: map is on the top, preview on the bottom.
+        raw = ((e.clientY - rect.top) / rect.height) * 100;
+      }
+
+      // Clamp: map cannot collapse below SPLIT_MAP_COLLAPSE before triggering
+      // the detail view transition; preview cannot shrink below SPLIT_PREVIEW_MIN.
+      const maxMapPct = 100 - SPLIT_PREVIEW_MIN;
+      const clamped = Math.min(Math.max(raw, 0), maxMapPct);
+
+      if (clamped <= SPLIT_MAP_COLLAPSE && selectedMarkerId) {
+        // Treat as "Full view" gesture — navigate to detail.
+        draggingRef.current = false;
+        const p = new URLSearchParams(searchParams.toString());
+        router.push(`/${selectedMarkerId}/detail?${p.toString()}`);
+        return;
+      }
+
+      setSplitPct(clamped);
+    },
+    [router, searchParams, selectedMarkerId],
+  );
+
+  const handleSplitterPointerUp = useCallback(() => {
+    draggingRef.current = false;
+  }, []);
+
   if (isEditor) {
     return (
       <div className="absolute inset-0 bg-surface overflow-auto">
@@ -172,17 +249,43 @@ export function MapShell({
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Layout
+  // -------------------------------------------------------------------------
+
+  // Map and preview dimensions expressed as inline styles so the split is
+  // continuously adjustable. The splitter handle sits between them.
+  const mapStyle = hasPreview
+    ? isLandscape
+      ? { width: `${splitPct}%`, height: "100%" }
+      : { height: `${splitPct}%`, width: "100%" }
+    : undefined;
+
+  const previewStyle = hasPreview
+    ? isLandscape
+      ? { width: `${100 - splitPct}%`, height: "100%" }
+      : { height: `${100 - splitPct}%`, width: "100%" }
+    : undefined;
+
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative w-full h-full overflow-hidden",
+        hasPreview && "flex",
+        hasPreview && (isLandscape ? "flex-row" : "flex-col"),
+      )}
+      onPointerMove={hasPreview ? handleSplitterPointerMove : undefined}
+      onPointerUp={hasPreview ? handleSplitterPointerUp : undefined}
+    >
       {/* Persistent map */}
       <div
         className={cn(
-          "absolute transition-all duration-300",
-          !hasPreview && !isDetail && "inset-0",
-          hasPreview &&
-            "top-0 left-0 right-0 bottom-[45%] lg:bottom-0 lg:right-[40%]",
-          isDetail && "inset-0 invisible",
+          "relative shrink-0 transition-[width,height] duration-0",
+          !hasPreview && !isDetail && "absolute inset-0",
+          isDetail && "absolute inset-0 invisible",
         )}
+        style={mapStyle}
       >
         {provider === "mapbox" ? (
           <MapboxMap {...mapProps} />
@@ -191,24 +294,30 @@ export function MapShell({
         )}
       </div>
 
-      {/* Preview panel — slides in from bottom (mobile) or right (desktop) */}
-      <div
-        className={cn(
-          "absolute bg-surface overflow-auto shadow-lg",
-          "transition-transform duration-300",
-          // Portrait (mobile): bottom panel
-          "left-0 right-0 bottom-0 h-[45%]",
-          hasPreview ? "translate-y-0" : "translate-y-full",
-          // Landscape (desktop): right panel
-          "lg:top-0 lg:left-auto lg:bottom-0 lg:h-full lg:w-[40%] lg:border-l lg:border-slate-200",
-          hasPreview ? "lg:translate-x-0" : "lg:translate-x-full",
-          // Fade
-          hasPreview ? "opacity-100" : "opacity-0 pointer-events-none",
-          !isDetail && hasPreview ? "" : "lg:hidden",
-        )}
-      >
-        {hasPreview && children}
-      </div>
+      {/* Drag handle — only rendered when preview is active */}
+      {hasPreview && (
+        <div
+          className={cn(
+            "shrink-0 bg-slate-200 hover:bg-brand-blue active:bg-brand-blue transition-colors",
+            "cursor-col-resize touch-none select-none z-20",
+            isLandscape ? "w-1.5 h-full" : "h-1.5 w-full cursor-row-resize",
+          )}
+          onPointerDown={handleSplitterPointerDown}
+          role="separator"
+          aria-label="Resize map and preview"
+          aria-orientation={isLandscapeRef.current ? "vertical" : "horizontal"}
+        />
+      )}
+
+      {/* Preview panel */}
+      {hasPreview && (
+        <div
+          className="relative shrink-0 bg-surface overflow-auto shadow-lg border-slate-200"
+          style={previewStyle}
+        >
+          {children}
+        </div>
+      )}
 
       {/* Detail overlay — full screen over map */}
       <div
