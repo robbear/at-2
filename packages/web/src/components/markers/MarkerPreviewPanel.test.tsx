@@ -4,19 +4,6 @@ import { MarkerPreviewPanel } from "./MarkerPreviewPanel";
 import type { Marker } from "@at-2/shared";
 import React from "react";
 
-// Mock next/image
-vi.mock("next/image", () => ({
-  default: ({
-    alt,
-    src,
-    ...props
-  }: {
-    alt: string;
-    src: string;
-    [key: string]: unknown;
-  }) => <img alt={alt} src={src} {...props} />,
-}));
-
 // Mock next/link
 vi.mock("next/link", () => ({
   default: ({
@@ -79,14 +66,16 @@ describe("MarkerPreviewPanel", () => {
     );
   });
 
-  it("renders the snippet text", () => {
-    render(<MarkerPreviewPanel marker={MOCK_MARKER} />);
-    expect(
-      screen.getByText("A short description of this location."),
-    ).toBeInTheDocument();
+  it("renders body content passed as children", () => {
+    render(
+      <MarkerPreviewPanel marker={MOCK_MARKER}>
+        <p>Rendered MDX body content</p>
+      </MarkerPreviewPanel>,
+    );
+    expect(screen.getByText("Rendered MDX body content")).toBeInTheDocument();
   });
 
-  it("renders attribution with userId", () => {
+  it("renders attribution with userId in the header", () => {
     render(<MarkerPreviewPanel marker={MOCK_MARKER} />);
     expect(screen.getByText("testuser")).toBeInTheDocument();
   });
