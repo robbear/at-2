@@ -116,9 +116,19 @@ export function MapShell({
   const isDetailRef = useRef(false);
   isDetailRef.current = isDetail;
 
-  // Reset split to default whenever a new preview opens.
+  // Set to true the moment we call router.push toward the detail route so
+  // handleMove is suppressed immediately — before pathname has updated.
+  // isDetailRef alone isn't enough: the ResizeObserver can fire moveend in the
+  // gap between the push call and the route actually changing.
+  const navigatingToDetailRef = useRef(false);
+
+  // Reset split to default whenever a new preview opens; also clear the
+  // navigating flag so handleMove works normally if the user returns from detail.
   useEffect(() => {
-    if (hasPreview) setSplitPct(SPLIT_DEFAULT);
+    if (hasPreview) {
+      setSplitPct(SPLIT_DEFAULT);
+      navigatingToDetailRef.current = false;
+    }
   }, [hasPreview, userId, timestamp]);
 
   // Close the list when navigating to a marker preview or detail.
@@ -139,9 +149,11 @@ export function MapShell({
   const handleMove = useCallback(
     (center: { lat: number; lng: number }, z: number) => {
       // The map container resizes (and Mapbox fires moveend) during the
-      // transition to the detail route. Bail out while in detail to avoid
-      // setState/router.replace loops triggered by the ResizeObserver.
-      if (isDetailRef.current) return;
+      // transition to the detail route. Bail out while navigating to or already
+      // in detail to avoid setState/router.replace loops triggered by the
+      // ResizeObserver. navigatingToDetailRef covers the gap between the
+      // router.push call and the pathname actually updating.
+      if (isDetailRef.current || navigatingToDetailRef.current) return;
       setMapCenter(center);
       setMapZoom(z);
       startTransition(() => {
@@ -243,6 +255,7 @@ export function MapShell({
 
       if (clamped <= SPLIT_MAP_COLLAPSE && selectedMarkerId) {
         draggingRef.current = false;
+        navigatingToDetailRef.current = true; // suppress moveend before route updates
         const p = new URLSearchParams(searchParams.toString());
         router.push(`/${selectedMarkerId}/detail?${p.toString()}`);
         return;
