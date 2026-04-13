@@ -1,20 +1,20 @@
 "use client";
 
-import type { ReactElement } from "react";
-import Image from "next/image";
+import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import { Pencil, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Marker } from "@at-2/shared";
-import { resolveImageUrl } from "@/lib/r2-url";
 
 interface MarkerPreviewPanelProps {
   marker: Marker;
+  children?: ReactNode;
 }
 
 export function MarkerPreviewPanel({
   marker,
+  children,
 }: MarkerPreviewPanelProps): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,8 +26,6 @@ export function MarkerPreviewPanel({
     router.push(`/?${p.toString()}`);
   }
 
-  const imageUrl = resolveImageUrl(marker.snippetImage);
-
   const postedAt = new Date(marker.posttime).toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
@@ -36,21 +34,29 @@ export function MarkerPreviewPanel({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header row */}
+      {/* Header */}
       <div className="flex items-start justify-between p-4 gap-2 bg-brand-blue">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-lg font-semibold text-white leading-snug">
-            {marker.title}
-          </h2>
-          {isOwner && (
-            <Link
-              href={`/${marker.id}/edit${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
-              className="shrink-0 p-1 hover:bg-white/20 rounded-md transition-colors text-white"
-              aria-label="Edit marker"
-            >
-              <Pencil size={16} />
-            </Link>
-          )}
+        <div className="flex flex-col min-w-0 gap-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-white leading-snug">
+              {marker.title}
+            </h2>
+            {isOwner && (
+              <Link
+                href={`/${marker.id}/edit${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
+                className="shrink-0 p-1 hover:bg-white/20 rounded-md transition-colors text-white"
+                aria-label="Edit marker"
+              >
+                <Pencil size={16} />
+              </Link>
+            )}
+          </div>
+          <p className="text-xs text-white/70">
+            by{" "}
+            <span className="font-medium text-white/90">{marker.userId}</span>
+            {" · "}
+            {postedAt}
+          </p>
         </div>
         <button
           type="button"
@@ -62,37 +68,10 @@ export function MarkerPreviewPanel({
         </button>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-auto">
-        {imageUrl && (
-          <div className="relative w-full aspect-video">
-            <Image
-              src={imageUrl}
-              alt={marker.title}
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          </div>
-        )}
+      {/* Scrollable body — server-rendered MDX passed as children */}
+      <div className="flex-1 overflow-auto px-4 py-4">{children}</div>
 
-        <div className="p-4 space-y-3">
-          {marker.snippetText && (
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {marker.snippetText}
-            </p>
-          )}
-
-          <p className="text-xs text-slate-500">
-            by{" "}
-            <span className="font-medium text-slate-700">{marker.userId}</span>
-            {" · "}
-            {postedAt}
-          </p>
-        </div>
-      </div>
-
-      {/* Footer CTA */}
+      {/* Footer */}
       <div className="p-4 border-t border-slate-200">
         <Link
           href={`/${marker.id}/detail?${searchParams.toString()}`}

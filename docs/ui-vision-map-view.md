@@ -17,6 +17,23 @@ The map resource (Mapbox or Google Map) is expensive and so the implementation d
 
 From a technical standpoint, the map markers rendered on the map reflect the search results defined in the current QuerySpec (see `queryspec.md`).
 
+## Map View Layout
+
+The map is bounded at the top by a header showing the Atlasphere logo, and icons for the search interface, the editor interface (when a user is signed in), URL sharing, and the menu.
+It is bounded at the bottom by a footer of the same vertical dimensions as the header.
+The footer is visible **only in full map mode** — it is hidden when a marker preview or detail view is active.
+The footer shows, centered, the number of markers displayed on the map (we may add more information in the footer later).
+A directional chevron icon accompanies the count: pointing up (↑) when the list is hidden to invite opening, pointing down (↓) when the list is visible to signal that tapping again will dismiss it.
+When the list is open the footer also changes its visual treatment (highlighted background, contrasting text) to reinforce that it is an active control.
+
+When the user clicks or taps on the footer, the marker selector list is revealed in the area between the header and the footer.
+The footer remains pinned at the bottom of the screen at all times — it does not move to become the top of the list.
+The marker selector becomes a means by which the user can see a list of all the markers on the map, listed in reverse-chronological order by creation date, rendered by each marker's snippetImage and snippetText, and including author information and creation date.
+Layout appropriate views are used for each item in the list (image to the left and snippet text to the right in wide screen layouts, image over text in mobile).
+Tapping on a list item behaves the same as tapping on a map marker — it navigates to the selected marker + preview mode and removes the list view.
+The list view does not affect page/URL state.
+Tapping the footer again dismisses the list, revealing the map with the footer in its usual position at the bottom of the screen.
+
 ## Map View and Marker Preview
 
 Each map marker represents data tied to an Atlasphere account, prepared by that account owner for presentation.
@@ -34,6 +51,13 @@ In **Portrait mode**: the view splits vertically — the map shifts to the top h
 and the marker preview occupies the bottom half (or vice versa, potentially
 configurable as a user preference).
 
+In both cases, the views are separated by a draggable splitter that allows the user to resize the map and preview areas — left-to-right in landscape, top-to-bottom in portrait.
+
+Splitter constraints:
+- **Initial split**: 50% each.
+- **Minimum preview**: the preview must occupy at least 10% of the available space; the splitter cannot be dragged to fully eliminate the preview.
+- **Map collapse gesture**: when the splitter is dragged such that the map is reduced to 5% or less of the available space, the action is treated as equivalent to tapping the **"Full view"** button — the app transitions to the full Marker Detail View. This gives users a natural swipe gesture to enter the detail view without hunting for a button.
+
 ### Preview Interaction
 
 - Clicking or tapping another map marker while a preview is displayed replaces
@@ -41,11 +65,14 @@ configurable as a user preference).
   the new marker; URL updates to the new marker's URL)
 - The preview includes a **"Full view"** button to transition to the full
   Marker Detail View (see `ui-vision-marker-detail-view.md`)
+- Moving the slider such that the map is obscured to 5 percent or less is treated the same as the user clicking on the **"Full view"** button (see above).
 - The preview can be dismissed, returning the user to the full-map view with
   no selected marker
 
 ### Preview Content
 
-The marker preview is a compact representation of the marker's authored content:
-typically the marker's title, snippet text, snippet image, and a "Full view"
-button. It is not the full rendered MDX — that is the detail view.
+The marker preview renders the marker's **full MDX content** — the same content as the Marker Detail View, displayed in the smaller side-by-side frame. There is no truncation or snippet-only view; the user can read the complete marker post without navigating away from the map.
+
+The preview panel respects the same content flags as the detail view (e.g. `hideSnippetImageInDetails` suppresses the hero snippet image in both contexts).
+
+The **"Full view"** button and the map-collapse splitter gesture both navigate to the Marker Detail View (`/{userId}/{timestamp}/detail`), which provides a full-screen, immersive reading experience. See `ui-vision-marker-detail-view.md`.

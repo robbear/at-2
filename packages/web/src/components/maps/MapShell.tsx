@@ -1,12 +1,25 @@
 "use client";
 
-import { useCallback, startTransition, useEffect, useState } from "react";
+import {
+  useCallback,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode, ReactElement } from "react";
-import { useSearchParams, useRouter, useParams, usePathname } from "next/navigation";
+import {
+  useSearchParams,
+  useRouter,
+  useParams,
+  usePathname,
+} from "next/navigation";
 import dynamic from "next/dynamic";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { selectProvider } from "@/lib/map/provider-select";
 import { cn } from "@/lib/utils";
-import type { MapProps, MarkerDot } from "./types";
+import { MarkerListPanel } from "@/components/markers/MarkerListPanel";
+import type { MapProps, MarkerDot, MarkerListItem } from "./types";
 
 const MapboxMap = dynamic<MapProps>(
   () =>
@@ -28,8 +41,14 @@ const DEFAULT_LAT = 33.8337;
 const DEFAULT_LNG = -60.8509;
 const DEFAULT_ZOOM = 2;
 
+// Splitter constraints (percentages of the available split axis).
+const SPLIT_DEFAULT = 50;
+const SPLIT_PREVIEW_MIN = 10; // preview cannot be smaller than this
+const SPLIT_MAP_COLLAPSE = 5; // map at or below this → transition to detail view
+
 interface MapShellProps {
   initialMarkers: MarkerDot[];
+  markerListItems: MarkerListItem[];
   providerOverride?: string;
   defaultLat?: number;
   defaultLng?: number;
@@ -39,6 +58,7 @@ interface MapShellProps {
 
 export function MapShell({
   initialMarkers,
+  markerListItems,
   providerOverride,
   defaultLat = DEFAULT_LAT,
   defaultLng = DEFAULT_LNG,
@@ -56,7 +76,6 @@ export function MapShell({
   const mpParam = searchParams.get("mp");
   const satellite = searchParams.get("maptype") === "1";
 
-  // Derive route params before useState so the initializer can reference them.
   const userId =
     typeof params["userId"] === "string" ? params["userId"] : undefined;
   const timestamp =
@@ -66,8 +85,6 @@ export function MapShell({
     if (latParam !== null) {
       return { lat: parseFloat(latParam), lng: parseFloat(lngParam ?? "0") };
     }
-    // No lat/lng in URL — if a marker is selected, center the map on it.
-    // This handles fresh page loads of /{userId}/{timestamp} without viewport params.
     if (userId && timestamp) {
       const markerId = `${userId}/${timestamp}`;
       const selected = initialMarkers.find((m) => m.id === markerId);
@@ -79,19 +96,48 @@ export function MapShell({
     zoomParam !== null ? parseFloat(zoomParam) : defaultZoom,
   );
 
+  // splitPct is the percentage of the available axis given to the MAP.
+  const [splitPct, setSplitPct] = useState(SPLIT_DEFAULT);
+
+  // listOpen: footer marker list is expanded (no URL change).
+  const [listOpen, setListOpen] = useState(false);
+
   const provider = selectProvider(providerOverride, mpParam);
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
   const isEditor =
-    (pathname?.endsWith("/edit") ?? false) ||
-    (pathname === "/markers/new");
+    (pathname?.endsWith("/edit") ?? false) || pathname === "/markers/new";
   const hasPreview = hasMarker && !isDetail && !isEditor;
 
-  // Auto-center on selected marker when no lat/lng is present in the URL.
-  // Handles the case where initialMarkers updates after mount (client re-fetch)
-  // and the marker wasn't found during the useState initializer.
+  // Ref so handleMove can read the current route state without being in its
+  // dependency array. Prevents the callback from being recreated on every
+  // navigation and avoids a stale-closure loop when the map fires moveend
+  // events while the container is resizing during a route transition.
+  const isDetailRef = useRef(false);
+  isDetailRef.current = isDetail;
+
+  // Set to true the moment we call router.push toward the detail route so
+  // handleMove is suppressed immediately — before pathname has updated.
+  // isDetailRef alone isn't enough: the ResizeObserver can fire moveend in the
+  // gap between the push call and the route actually changing.
+  const navigatingToDetailRef = useRef(false);
+
+  // Reset split to default whenever a new preview opens; also clear the
+  // navigating flag so handleMove works normally if the user returns from detail.
   useEffect(() => {
-    if (latParam !== null) return; // explicit viewport — don't override
+    if (hasPreview) {
+      setSplitPct(SPLIT_DEFAULT);
+      navigatingToDetailRef.current = false;
+    }
+  }, [hasPreview, userId, timestamp]);
+
+  // Close the list when navigating to a marker preview or detail.
+  useEffect(() => {
+    if (hasMarker) setListOpen(false);
+  }, [hasMarker]);
+
+  useEffect(() => {
+    if (latParam !== null) return;
     if (!userId || !timestamp) return;
     const markerId = `${userId}/${timestamp}`;
     const marker = initialMarkers.find((m) => m.id === markerId);
@@ -100,8 +146,27 @@ export function MapShell({
     }
   }, [latParam, userId, timestamp, initialMarkers]);
 
+  // Defined here (before handleMove) so the callback can read it without a
+  // TypeScript "used before declaration" error. The splitter section below
+  // sets/clears it; the orientation refs stay co-located with the splitter.
+  const draggingRef = useRef(false);
+
   const handleMove = useCallback(
     (center: { lat: number; lng: number }, z: number) => {
+      // Skip moveend events that are caused by the map container resizing, not
+      // by the user panning or zooming:
+      //   • draggingRef: splitter is active — container is resizing but the map
+      //     is not being panned; updating lat/lng/zoom in the URL is wrong.
+      //   • navigatingToDetailRef / isDetailRef: covers the window between
+      //     router.push and the pathname actually updating, and the detail state
+      //     itself. Without these, the ResizeObserver → resize() → moveend chain
+      //     causes "Maximum update depth exceeded".
+      if (
+        draggingRef.current ||
+        navigatingToDetailRef.current ||
+        isDetailRef.current
+      )
+        return;
       setMapCenter(center);
       setMapZoom(z);
       startTransition(() => {
@@ -126,11 +191,6 @@ export function MapShell({
   const selectedMarkerId =
     userId && timestamp ? `${userId}/${timestamp}` : undefined;
 
-  // When the selected marker is absent from the current result set, extend
-  // the QuerySpec by appending its ID to markerIds[]. The API uses union
-  // semantics (markerIds OR other filters), so this is purely additive.
-  // Guard: skip if the marker's userId is already covered by the userIds
-  // filter — in that case the pending re-fetch will include it once done.
   useEffect(() => {
     if (!selectedMarkerId || !userId) return;
     if (initialMarkers.some((m) => m.id === selectedMarkerId)) return;
@@ -160,10 +220,72 @@ export function MapShell({
       : undefined,
   };
 
-  // Editor routes have their own map — skip the persistent map entirely.
-  // Keeping the main map alive alongside the editor map causes two concurrent
-  // Mapbox GL instances and React lifecycle conflicts. The cost of one extra
-  // map load on entering/leaving the editor is acceptable.
+  // -------------------------------------------------------------------------
+  // Splitter drag logic
+  // -------------------------------------------------------------------------
+
+  const [isLandscape, setIsLandscape] = useState(false);
+  const isLandscapeRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: landscape)");
+    isLandscapeRef.current = mq.matches;
+    setIsLandscape(mq.matches);
+    const onChange = (e: MediaQueryListEvent): void => {
+      isLandscapeRef.current = e.matches;
+      setIsLandscape(e.matches);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const handleSplitterPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      draggingRef.current = true;
+    },
+    [],
+  );
+
+  const handleSplitterPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      let raw: number;
+      if (isLandscapeRef.current) {
+        raw = ((e.clientX - rect.left) / rect.width) * 100;
+      } else {
+        raw = ((e.clientY - rect.top) / rect.height) * 100;
+      }
+
+      const maxMapPct = 100 - SPLIT_PREVIEW_MIN;
+      const clamped = Math.min(Math.max(raw, 0), maxMapPct);
+
+      if (clamped <= SPLIT_MAP_COLLAPSE && selectedMarkerId) {
+        draggingRef.current = false;
+        navigatingToDetailRef.current = true; // suppress moveend before route updates
+        const p = new URLSearchParams(searchParams.toString());
+        router.push(`/${selectedMarkerId}/detail?${p.toString()}`);
+        return;
+      }
+
+      setSplitPct(clamped);
+    },
+    [router, searchParams, selectedMarkerId],
+  );
+
+  const handleSplitterPointerUp = useCallback(() => {
+    draggingRef.current = false;
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Editor: skip persistent map entirely
+  // -------------------------------------------------------------------------
+
   if (isEditor) {
     return (
       <div className="absolute inset-0 bg-surface overflow-auto">
@@ -172,54 +294,132 @@ export function MapShell({
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Layout
+  // -------------------------------------------------------------------------
+
+  const mapStyle = hasPreview
+    ? isLandscape
+      ? { width: `${splitPct}%`, height: "100%" }
+      : { height: `${splitPct}%`, width: "100%" }
+    : undefined;
+
+  const previewStyle = hasPreview
+    ? isLandscape
+      ? { width: `${100 - splitPct}%`, height: "100%" }
+      : { height: `${100 - splitPct}%`, width: "100%" }
+    : undefined;
+
+  const markerCount = markerListItems.length;
+  const footerLabel = `${markerCount} marker${markerCount !== 1 ? "s" : ""}`;
+
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      {/* Persistent map */}
+    <div className="flex flex-col w-full h-full overflow-hidden">
+      {/* Content area: map + preview/detail + list overlay */}
       <div
+        ref={containerRef}
         className={cn(
-          "absolute transition-all duration-300",
-          !hasPreview && !isDetail && "inset-0",
-          hasPreview &&
-            "top-0 left-0 right-0 bottom-[45%] lg:bottom-0 lg:right-[40%]",
-          isDetail && "inset-0 invisible",
+          "flex-1 relative min-h-0 overflow-hidden",
+          hasPreview && "flex",
+          hasPreview && (isLandscape ? "flex-row" : "flex-col"),
         )}
+        onPointerMove={hasPreview ? handleSplitterPointerMove : undefined}
+        onPointerUp={hasPreview ? handleSplitterPointerUp : undefined}
       >
-        {provider === "mapbox" ? (
-          <MapboxMap {...mapProps} />
-        ) : (
-          <GoogleMap {...mapProps} />
+        {/* Persistent map */}
+        <div
+          className={cn(
+            "relative shrink-0",
+            !hasPreview && !isDetail && "absolute inset-0",
+            isDetail && "absolute inset-0 invisible",
+          )}
+          style={mapStyle}
+        >
+          {provider === "mapbox" ? (
+            <MapboxMap {...mapProps} />
+          ) : (
+            <GoogleMap {...mapProps} />
+          )}
+        </div>
+
+        {/* Drag handle — outer div is the touch target, inner pill is the visual */}
+        {hasPreview && (
+          <div
+            className={cn(
+              "shrink-0 flex items-center justify-center",
+              "touch-none select-none z-20 bg-slate-100",
+              "hover:bg-slate-200 active:bg-brand-blue/20 transition-colors",
+              isLandscape
+                ? "w-5 h-full cursor-col-resize"
+                : "h-5 w-full cursor-row-resize",
+            )}
+            onPointerDown={handleSplitterPointerDown}
+            role="separator"
+            aria-label="Resize map and preview"
+            aria-orientation={isLandscape ? "vertical" : "horizontal"}
+          >
+            <div
+              className={cn(
+                "rounded-full bg-slate-400 shrink-0",
+                isLandscape ? "w-1 h-8" : "h-1 w-8",
+              )}
+            />
+          </div>
+        )}
+
+        {/* Preview panel */}
+        {hasPreview && (
+          <div
+            className="relative shrink-0 bg-surface overflow-auto shadow-lg border-slate-200"
+            style={previewStyle}
+          >
+            {children}
+          </div>
+        )}
+
+        {/* Detail overlay */}
+        <div
+          className={cn(
+            "absolute inset-0 bg-surface overflow-auto z-10",
+            "transition-opacity duration-300",
+            isDetail ? "opacity-100" : "opacity-0 pointer-events-none",
+          )}
+        >
+          {isDetail && children}
+        </div>
+
+        {/* Marker list overlay — slides over the content area */}
+        {listOpen && (
+          <div className="absolute inset-0 z-30 bg-surface overflow-auto">
+            <MarkerListPanel
+              markers={markerListItems}
+              onSelect={(id) => {
+                setListOpen(false);
+                handleMarkerClick(id);
+              }}
+            />
+          </div>
         )}
       </div>
 
-      {/* Preview panel — slides in from bottom (mobile) or right (desktop) */}
-      <div
-        className={cn(
-          "absolute bg-surface overflow-auto shadow-lg",
-          "transition-transform duration-300",
-          // Portrait (mobile): bottom panel
-          "left-0 right-0 bottom-0 h-[45%]",
-          hasPreview ? "translate-y-0" : "translate-y-full",
-          // Landscape (desktop): right panel
-          "lg:top-0 lg:left-auto lg:bottom-0 lg:h-full lg:w-[40%] lg:border-l lg:border-slate-200",
-          hasPreview ? "lg:translate-x-0" : "lg:translate-x-full",
-          // Fade
-          hasPreview ? "opacity-100" : "opacity-0 pointer-events-none",
-          !isDetail && hasPreview ? "" : "lg:hidden",
-        )}
-      >
-        {hasPreview && children}
-      </div>
-
-      {/* Detail overlay — full screen over map */}
-      <div
-        className={cn(
-          "absolute inset-0 bg-surface overflow-auto z-10",
-          "transition-opacity duration-300",
-          isDetail ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
-      >
-        {isDetail && children}
-      </div>
+      {/* Footer — visible only in full map mode (no preview, no detail) */}
+      {!isDetail && !hasPreview && (
+        <button
+          type="button"
+          className={cn(
+            "shrink-0 h-12 flex items-center justify-center gap-2 border-t transition-colors text-sm font-medium w-full",
+            listOpen
+              ? "bg-brand-blue text-white border-brand-blue hover:bg-brand-blue/90"
+              : "bg-surface text-slate-600 border-slate-200 hover:bg-surface-muted",
+          )}
+          onClick={() => setListOpen((o) => !o)}
+          aria-expanded={listOpen}
+          aria-label={listOpen ? "Hide marker list" : "Show marker list"}
+        >
+          {listOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          {footerLabel}
+        </button>
+      )}
     </div>
   );
 }

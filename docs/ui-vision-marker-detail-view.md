@@ -48,9 +48,19 @@ This includes:
 Legacy markers from v1 may contain old custom markdown extensions that render
 as raw text — this is acceptable until a migration tool is built.
 
-## Marker Preview
+## Relationship to Marker Preview
 
 See `ui-vision-map-view.md` for more information.
 
-The Marker Preview is a compact representation of the same marker content,
-viewed side-by-side with the map view. It is not the full detail view.
+The Marker Preview renders the same full MDX content as the Detail View, displayed
+side-by-side with the map. The distinction between the two views is context and
+chrome — not content:
+
+- **Preview**: map remains visible alongside the content; interactive chrome includes
+  a close/dismiss button, an edit shortcut (owners), and a "Full view" button.
+- **Detail View**: full-screen immersion; interactive chrome is a "Return to map" link
+  and an edit shortcut (owners).
+
+Users who want to read the content without the map can use the "Full view" button or
+drag the splitter to collapse the map (≤ 5% map width/height triggers the transition
+automatically).

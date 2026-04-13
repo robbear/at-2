@@ -4,11 +4,13 @@ import type { ReactElement } from "react";
 import type { Metadata } from "next";
 import type { Marker } from "@at-2/shared";
 import { MarkerPreviewPanel } from "@/components/markers/MarkerPreviewPanel";
+import { MarkerBody } from "@/components/markers/MarkerBody";
 import { getApiUrl } from "@/lib/api-url";
 import { getBaseUrl } from "@/lib/base-url";
 
 interface PageParams {
   params: Promise<{ userId: string; timestamp: string }>;
+  searchParams: Promise<Record<string, string | string[]>>;
 }
 
 async function fetchMarker(
@@ -30,7 +32,9 @@ async function fetchMarker(
 
 export async function generateMetadata({
   params,
-}: PageParams): Promise<Metadata> {
+}: {
+  params: Promise<{ userId: string; timestamp: string }>;
+}): Promise<Metadata> {
   const { userId, timestamp } = await params;
   const marker = await fetchMarker(userId, timestamp);
   if (!marker) return {};
@@ -69,17 +73,27 @@ export async function generateMetadata({
 
 export default async function MarkerPreviewPage({
   params,
+  searchParams,
 }: PageParams): Promise<ReactElement> {
   const { userId, timestamp } = await params;
+  const resolvedSearch = await searchParams;
   const marker = await fetchMarker(userId, timestamp);
 
   if (!marker) {
     notFound();
   }
 
+  const searchString = new URLSearchParams(
+    Object.entries(resolvedSearch).flatMap(([k, v]) =>
+      Array.isArray(v) ? v.map((val) => [k, val]) : [[k, v]],
+    ),
+  ).toString();
+
   return (
     <Suspense>
-      <MarkerPreviewPanel marker={marker} />
+      <MarkerPreviewPanel marker={marker}>
+        <MarkerBody marker={marker} searchString={searchString} />
+      </MarkerPreviewPanel>
     </Suspense>
   );
 }

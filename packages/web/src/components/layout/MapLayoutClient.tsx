@@ -8,7 +8,7 @@ import { SearchPanel } from "@/components/search/SearchPanel";
 import { MapShell } from "@/components/maps/MapShell";
 import { isQuerySpecActive } from "@/lib/queryspec-active";
 import { fetchMarkersAction } from "@/app/(map)/actions";
-import type { MarkerDot } from "@/components/maps/types";
+import type { MarkerDot, MarkerListItem } from "@/components/maps/types";
 
 // Keys whose changes should trigger a marker re-fetch
 const QUERYSPEC_KEYS = [
@@ -36,6 +36,7 @@ function querySpecString(searchParams: URLSearchParams): string {
 
 interface MapLayoutClientProps {
   initialMarkers: MarkerDot[];
+  initialListItems: MarkerListItem[];
   providerOverride?: string;
   canToggleProvider?: boolean;
   defaultLat?: number;
@@ -46,6 +47,7 @@ interface MapLayoutClientProps {
 
 export function MapLayoutClient({
   initialMarkers,
+  initialListItems,
   providerOverride,
   canToggleProvider = false,
   defaultLat,
@@ -55,17 +57,19 @@ export function MapLayoutClient({
 }: MapLayoutClientProps): ReactElement {
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [markers, setMarkers] = useState(initialMarkers);
+  const [markerListItems, setMarkerListItems] = useState(initialListItems);
   const [, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const searchActive = isQuerySpecActive(searchParams);
 
   // Re-fetch markers whenever the QuerySpec portion of the URL changes.
-  // The dependency is the serialized QuerySpec string — viewport params
-  // (lat/lng/zoom) don't trigger a re-fetch.
   const qsKey = querySpecString(searchParams);
   useEffect(() => {
     startTransition(() => {
-      fetchMarkersAction(searchParams.toString()).then(setMarkers);
+      fetchMarkersAction(searchParams.toString()).then(({ dots, listItems }) => {
+        setMarkers(dots);
+        setMarkerListItems(listItems);
+      });
     });
     // qsKey is the actual dependency; searchParams object identity changes
     // on every render so we use the derived string instead.
@@ -86,6 +90,7 @@ export function MapLayoutClient({
       <div className="flex-1 relative min-h-0">
         <MapShell
           initialMarkers={markers}
+          markerListItems={markerListItems}
           providerOverride={providerOverride}
           defaultLat={defaultLat}
           defaultLng={defaultLng}
