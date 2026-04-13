@@ -108,6 +108,13 @@ export function MapShell({
     (pathname?.endsWith("/edit") ?? false) || pathname === "/markers/new";
   const hasPreview = hasMarker && !isDetail && !isEditor;
 
+  // Ref so handleMove can read the current route state without being in its
+  // dependency array. Prevents the callback from being recreated on every
+  // navigation and avoids a stale-closure loop when the map fires moveend
+  // events while the container is resizing during a route transition.
+  const isDetailRef = useRef(false);
+  isDetailRef.current = isDetail;
+
   // Reset split to default whenever a new preview opens.
   useEffect(() => {
     if (hasPreview) setSplitPct(SPLIT_DEFAULT);
@@ -130,6 +137,10 @@ export function MapShell({
 
   const handleMove = useCallback(
     (center: { lat: number; lng: number }, z: number) => {
+      // The map container resizes (and Mapbox fires moveend) during the
+      // transition to the detail route. Bail out while in detail to avoid
+      // setState/router.replace loops triggered by the ResizeObserver.
+      if (isDetailRef.current) return;
       setMapCenter(center);
       setMapZoom(z);
       startTransition(() => {
