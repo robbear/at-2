@@ -31,7 +31,6 @@ The footer remains pinned at the bottom of the screen at all times — it does n
 The marker selector becomes a means by which the user can see a list of all the markers on the map, listed in reverse-chronological order by creation date, rendered by each marker's snippetImage and snippetText, and including author information and creation date.
 Layout appropriate views are used for each item in the list (image to the left and snippet text to the right in wide screen layouts, image over text in mobile).
 Tapping on a list item behaves the same as tapping on a map marker — it navigates to the selected marker + preview mode and removes the list view.
-Swiping a list item to the right past a threshold (approximately half the item width) is an alternative gesture for dismissing the list, identical in outcome to tapping the footer. Swipe-right is the conventional "go back / put this away" gesture (consistent with iOS back swipe and Android back gesture); swipe-left is reserved by platform conventions for destructive secondary actions such as delete.
 The list view does not affect page/URL state.
 Tapping the footer again dismisses the list, revealing the map with the footer in its usual position at the bottom of the screen.
 
