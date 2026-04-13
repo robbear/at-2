@@ -342,21 +342,29 @@ export function MapShell({
           )}
         </div>
 
-        {/* Drag handle */}
+        {/* Drag handle — outer div is the touch target, inner pill is the visual */}
         {hasPreview && (
           <div
             className={cn(
-              "shrink-0 bg-slate-200 hover:bg-brand-blue active:bg-brand-blue transition-colors",
-              "touch-none select-none z-20",
+              "shrink-0 flex items-center justify-center",
+              "touch-none select-none z-20 bg-slate-100",
+              "hover:bg-slate-200 active:bg-brand-blue/20 transition-colors",
               isLandscape
-                ? "w-1.5 h-full cursor-col-resize"
-                : "h-1.5 w-full cursor-row-resize",
+                ? "w-5 h-full cursor-col-resize"
+                : "h-5 w-full cursor-row-resize",
             )}
             onPointerDown={handleSplitterPointerDown}
             role="separator"
             aria-label="Resize map and preview"
             aria-orientation={isLandscape ? "vertical" : "horizontal"}
-          />
+          >
+            <div
+              className={cn(
+                "rounded-full bg-slate-400 shrink-0",
+                isLandscape ? "w-1 h-8" : "h-1 w-8",
+              )}
+            />
+          </div>
         )}
 
         {/* Preview panel */}
@@ -395,8 +403,8 @@ export function MapShell({
         )}
       </div>
 
-      {/* Footer — hidden in detail view; shows marker count and toggles the list */}
-      {!isDetail && (
+      {/* Footer — visible only in full map mode (no preview, no detail) */}
+      {!isDetail && !hasPreview && (
         <button
           type="button"
           className={cn(

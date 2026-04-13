@@ -21,6 +21,7 @@ From a technical standpoint, the map markers rendered on the map reflect the sea
 
 The map is bounded at the top by a header showing the Atlasphere logo, and icons for the search interface, the editor interface (when a user is signed in), URL sharing, and the menu.
 It is bounded at the bottom by a footer of the same vertical dimensions as the header.
+The footer is visible **only in full map mode** — it is hidden when a marker preview or detail view is active.
 The footer shows, centered, the number of markers displayed on the map (we may add more information in the footer later).
 A directional chevron icon accompanies the count: pointing up (↑) when the list is hidden to invite opening, pointing down (↓) when the list is visible to signal that tapping again will dismiss it.
 When the list is open the footer also changes its visual treatment (highlighted background, contrasting text) to reinforce that it is an active control.
