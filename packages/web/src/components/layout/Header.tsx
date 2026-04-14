@@ -13,9 +13,10 @@ interface HeaderProps {
   onSearchToggle?: () => void;
   searchActive?: boolean;
   canToggleProvider?: boolean;
+  activeProvider?: "google" | "mapbox";
 }
 
-export function Header({ onSearchToggle, searchActive = false, canToggleProvider = false }: HeaderProps): ReactElement {
+export function Header({ onSearchToggle, searchActive = false, canToggleProvider = false, activeProvider }: HeaderProps): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const { data: session } = useSession();
@@ -91,7 +92,7 @@ export function Header({ onSearchToggle, searchActive = false, canToggleProvider
         </div>
       </header>
 
-      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} canToggleProvider={canToggleProvider} />
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} canToggleProvider={canToggleProvider} activeProvider={activeProvider} />
 
       {/* Toast notification */}
       <div

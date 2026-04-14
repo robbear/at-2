@@ -12,15 +12,16 @@ interface MenuDrawerProps {
   open: boolean;
   onClose: () => void;
   canToggleProvider?: boolean;
+  activeProvider?: "google" | "mapbox";
 }
 
-export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDrawerProps): ReactElement {
+export function MenuDrawer({ open, onClose, canToggleProvider = false, activeProvider = "google" }: MenuDrawerProps): ReactElement {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
   const ph = usePostHog();
   const isSatellite = searchParams.get("maptype") === "1";
-  const isGoogle = searchParams.get("mp") === "0";
+  const isGoogle = activeProvider === "google";
 
   function handleSatelliteToggle(): void {
     ph?.capture("satellite_toggle", { enabled: !isSatellite });
@@ -35,10 +36,11 @@ export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDra
   }
 
   function handleProviderToggle(): void {
-    ph?.capture("map_provider_toggle", { to: isGoogle ? "mapbox" : "google" });
+    const to = isGoogle ? "mapbox" : "google";
+    ph?.capture("map_provider_toggle", { to });
     const p = new URLSearchParams(searchParams.toString());
-    if (isGoogle) {
-      p.delete("mp");
+    if (to === "mapbox") {
+      p.set("mp", "1");
     } else {
       p.set("mp", "0");
     }

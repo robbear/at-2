@@ -8,6 +8,7 @@ import { SearchPanel } from "@/components/search/SearchPanel";
 import { MapShell } from "@/components/maps/MapShell";
 import { isQuerySpecActive } from "@/lib/queryspec-active";
 import { fetchMarkersAction } from "@/app/(map)/actions";
+import { selectProvider } from "@/lib/map/provider-select";
 import type { MarkerDot, MarkerListItem } from "@/components/maps/types";
 
 // Keys whose changes should trigger a marker re-fetch
@@ -63,6 +64,7 @@ export function MapLayoutClient({
   const [, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const searchActive = isQuerySpecActive(searchParams);
+  const activeProvider = selectProvider(providerOverride, searchParams.get("mp"), defaultProvider);
 
   // Re-fetch markers whenever the QuerySpec portion of the URL changes.
   const qsKey = querySpecString(searchParams);
@@ -84,6 +86,7 @@ export function MapLayoutClient({
         onSearchToggle={() => setSearchPanelOpen((o) => !o)}
         searchActive={searchActive}
         canToggleProvider={canToggleProvider}
+        activeProvider={activeProvider}
       />
       <SearchPanel
         open={searchPanelOpen}
