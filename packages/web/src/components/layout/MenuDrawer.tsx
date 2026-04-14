@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 import { cn } from "@/lib/utils";
 
 interface MenuDrawerProps {
@@ -17,10 +18,12 @@ export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDra
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const ph = usePostHog();
   const isSatellite = searchParams.get("maptype") === "1";
   const isGoogle = searchParams.get("mp") === "0";
 
   function handleSatelliteToggle(): void {
+    ph?.capture("satellite_toggle", { enabled: !isSatellite });
     const p = new URLSearchParams(searchParams.toString());
     if (isSatellite) {
       p.delete("maptype");
@@ -32,6 +35,7 @@ export function MenuDrawer({ open, onClose, canToggleProvider = false }: MenuDra
   }
 
   function handleProviderToggle(): void {
+    ph?.capture("map_provider_toggle", { to: isGoogle ? "mapbox" : "google" });
     const p = new URLSearchParams(searchParams.toString());
     if (isGoogle) {
       p.delete("mp");

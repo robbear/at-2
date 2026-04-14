@@ -22,6 +22,7 @@
     "next-auth": "5.0.0-beta.30",
     "next-mdx-remote": "^6.0.0",
     "pica": "^9.0.1",
+    "posthog-js": "^1.368.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.72.0",

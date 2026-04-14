@@ -16,6 +16,7 @@ import {
 } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { selectProvider } from "@/lib/map/provider-select";
 import { cn } from "@/lib/utils";
 import { MarkerListPanel } from "@/components/markers/MarkerListPanel";
@@ -69,6 +70,7 @@ export function MapShell({
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const ph = usePostHog();
 
   const latParam = searchParams.get("lat");
   const lngParam = searchParams.get("lng");
@@ -182,10 +184,11 @@ export function MapShell({
 
   const handleMarkerClick = useCallback(
     (markerId: string) => {
+      ph?.capture("marker_click", { marker_id: markerId });
       const p = new URLSearchParams(searchParams.toString());
       router.push(`/${markerId}?${p.toString()}`);
     },
-    [router, searchParams],
+    [router, searchParams, ph],
   );
 
   const selectedMarkerId =
@@ -206,6 +209,15 @@ export function MapShell({
   const selectedMarkerCoords = selectedMarkerId
     ? initialMarkers.find((m) => m.id === selectedMarkerId)
     : undefined;
+
+  // Track preview panel open (fires once each time a new preview opens).
+  const prevHasPreviewRef = useRef(false);
+  useEffect(() => {
+    if (hasPreview && !prevHasPreviewRef.current && selectedMarkerId) {
+      ph?.capture("marker_preview_open", { marker_id: selectedMarkerId });
+    }
+    prevHasPreviewRef.current = hasPreview;
+  }, [hasPreview, selectedMarkerId, ph]);
 
   const mapProps: MapProps = {
     center: mapCenter,
@@ -412,7 +424,10 @@ export function MapShell({
               ? "bg-brand-blue text-white border-brand-blue hover:bg-brand-blue/90"
               : "bg-surface text-slate-600 border-slate-200 hover:bg-surface-muted",
           )}
-          onClick={() => setListOpen((o) => !o)}
+          onClick={() => {
+            if (!listOpen) ph?.capture("marker_list_open");
+            setListOpen((o) => !o);
+          }}
           aria-expanded={listOpen}
           aria-label={listOpen ? "Hide marker list" : "Show marker list"}
         >

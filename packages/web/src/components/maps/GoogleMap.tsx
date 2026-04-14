@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import type { ReactElement } from "react";
 import {
   APIProvider,
@@ -8,6 +8,7 @@ import {
   AdvancedMarker,
   useMap,
 } from "@vis.gl/react-google-maps";
+import { usePostHog } from "posthog-js/react";
 import { BaseMarker } from "./BaseMarker";
 import type { MapProps } from "./types";
 
@@ -61,6 +62,21 @@ function IdleSync({ onMove }: IdleSyncProps): null {
   return null;
 }
 
+/** Fires map_load once when the Google Maps instance is ready. */
+function MapLoadTracker(): null {
+  const map = useMap();
+  const ph = usePostHog();
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    if (!map || firedRef.current) return;
+    firedRef.current = true;
+    ph?.capture("map_load", { provider: "google" });
+  }, [map, ph]);
+
+  return null;
+}
+
 export function GoogleMap({
   center,
   zoom,
@@ -107,6 +123,7 @@ export function GoogleMap({
         ))}
         <IdleSync onMove={onMove} />
         <MarkerFocus selectedMarkerCoords={selectedMarkerCoords} />
+        <MapLoadTracker />
       </Map>
     </APIProvider>
   );
