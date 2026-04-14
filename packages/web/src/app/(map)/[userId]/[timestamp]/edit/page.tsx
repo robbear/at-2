@@ -83,5 +83,12 @@ export default function EditMarkerPage(): ReactElement | null {
 
   if (!marker) return null;
 
-  return <EditorView mode="edit" marker={marker} />;
+  return (
+    <EditorView
+      mode="edit"
+      marker={marker}
+      providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
+      defaultProvider={process.env["MAP_DEFAULT_PROVIDER"]}
+    />
+  );
 }

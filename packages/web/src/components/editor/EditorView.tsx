@@ -39,6 +39,7 @@ interface EditorViewProps {
   mode: "create" | "edit";
   marker?: Marker;
   providerOverride?: string;
+  defaultProvider?: string;
 }
 
 async function resizeImage(file: File, maxPx = 1024): Promise<File> {
@@ -125,6 +126,7 @@ export function EditorView({
   mode,
   marker,
   providerOverride,
+  defaultProvider,
 }: EditorViewProps): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -450,6 +452,7 @@ export function EditorView({
             setLng(newLng);
           }}
           providerOverride={providerOverride}
+          defaultProvider={defaultProvider}
         />
       </div>
 

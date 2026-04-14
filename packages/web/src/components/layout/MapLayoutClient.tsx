@@ -38,6 +38,7 @@ interface MapLayoutClientProps {
   initialMarkers: MarkerDot[];
   initialListItems: MarkerListItem[];
   providerOverride?: string;
+  defaultProvider?: string;
   canToggleProvider?: boolean;
   defaultLat?: number;
   defaultLng?: number;
@@ -49,6 +50,7 @@ export function MapLayoutClient({
   initialMarkers,
   initialListItems,
   providerOverride,
+  defaultProvider,
   canToggleProvider = false,
   defaultLat,
   defaultLng,
@@ -92,6 +94,7 @@ export function MapLayoutClient({
           initialMarkers={markers}
           markerListItems={markerListItems}
           providerOverride={providerOverride}
+          defaultProvider={defaultProvider}
           defaultLat={defaultLat}
           defaultLng={defaultLng}
           defaultZoom={defaultZoom}

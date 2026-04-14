@@ -24,6 +24,7 @@ export interface EditorMapProps {
   outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
   providerOverride?: string;
+  defaultProvider?: string;
 }
 
 export function EditorMap({
@@ -33,8 +34,9 @@ export function EditorMap({
   outline = "#ffffff",
   onLocationChange,
   providerOverride,
+  defaultProvider,
 }: EditorMapProps): ReactElement {
-  const provider = selectProvider(providerOverride, null);
+  const provider = selectProvider(providerOverride, null, defaultProvider);
 
   if (provider === "mapbox") {
     return (
