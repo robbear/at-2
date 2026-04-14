@@ -31,7 +31,8 @@ export default function NewMarkerPage(): ReactElement | null {
   return (
     <EditorView
       mode="create"
-      providerOverride={undefined}
+      providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
+      defaultProvider={process.env["MAP_DEFAULT_PROVIDER"]}
     />
   );
 }

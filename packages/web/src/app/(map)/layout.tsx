@@ -102,6 +102,7 @@ export default async function MapLayout({
         initialMarkers={dots}
         initialListItems={listItems}
         providerOverride={process.env["MAP_PROVIDER_OVERRIDE"]}
+        defaultProvider={process.env["MAP_DEFAULT_PROVIDER"]}
         canToggleProvider={canToggleMapProvider(session?.user?.email)}
         defaultLat={defaultLat}
         defaultLng={defaultLng}

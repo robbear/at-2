@@ -27,12 +27,18 @@ describe("selectProvider", () => {
     expect(selectProvider(undefined, "1")).toBe("mapbox");
   });
 
-  it("returns mapbox as default when no override and no urlParam", () => {
-    expect(selectProvider(undefined, null)).toBe("mapbox");
+  it("returns google as default when no override and no urlParam", () => {
+    expect(selectProvider(undefined, null)).toBe("google");
   });
 
-  it("returns mapbox as default for unrecognised urlParam", () => {
-    expect(selectProvider(undefined, "2")).toBe("mapbox");
-    expect(selectProvider(undefined, "")).toBe("mapbox");
+  it("returns google as default for unrecognised urlParam", () => {
+    expect(selectProvider(undefined, "2")).toBe("google");
+    expect(selectProvider(undefined, "")).toBe("google");
+  });
+
+  it("respects defaultProvider param", () => {
+    expect(selectProvider(undefined, null, "mapbox")).toBe("mapbox");
+    expect(selectProvider(undefined, null, "google")).toBe("google");
+    expect(selectProvider(undefined, null, undefined)).toBe("google");
   });
 });

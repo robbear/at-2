@@ -171,11 +171,11 @@ Two providers supported: **Google Maps** (primary) and **Mapbox** (fallback).
 
 ### Provider switching
 - URL param `?mp=0` (Google) or `?mp=1` (Mapbox) allows per-session override (preserved from v1)
+- `MAP_DEFAULT_PROVIDER=google|mapbox` env var sets the default provider when no
+  override and no URL param is present. Defaults to `google` if unset.
 - `MAP_PROVIDER_OVERRIDE=google|mapbox` env var forces all map loads to a specific
-  provider, superseding the URL param — use this to cut over instantly without a
-  code change
-- If no override is set and no URL param is present, default provider is **Mapbox**
-  (more generous free quota)
+  provider, superseding the URL param and the default — use this to cut over
+  instantly without a code change
 
 ---
 

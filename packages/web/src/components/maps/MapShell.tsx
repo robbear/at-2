@@ -51,6 +51,7 @@ interface MapShellProps {
   initialMarkers: MarkerDot[];
   markerListItems: MarkerListItem[];
   providerOverride?: string;
+  defaultProvider?: string;
   defaultLat?: number;
   defaultLng?: number;
   defaultZoom?: number;
@@ -61,6 +62,7 @@ export function MapShell({
   initialMarkers,
   markerListItems,
   providerOverride,
+  defaultProvider,
   defaultLat = DEFAULT_LAT,
   defaultLng = DEFAULT_LNG,
   defaultZoom = DEFAULT_ZOOM,
@@ -104,7 +106,7 @@ export function MapShell({
   // listOpen: footer marker list is expanded (no URL change).
   const [listOpen, setListOpen] = useState(false);
 
-  const provider = selectProvider(providerOverride, mpParam);
+  const provider = selectProvider(providerOverride, mpParam, defaultProvider);
   const hasMarker = Boolean(userId && timestamp);
   const isDetail = pathname?.endsWith("/detail") ?? false;
   const isEditor =
