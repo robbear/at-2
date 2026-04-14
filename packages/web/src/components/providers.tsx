@@ -14,6 +14,7 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     capture_pageleave: true,
     persistence: "localStorage",
   });
+  posthog.register({ env: process.env.NEXT_PUBLIC_APP_ENV ?? "development" });
 }
 
 /** Identifies the signed-in user to PostHog when the session loads. */
