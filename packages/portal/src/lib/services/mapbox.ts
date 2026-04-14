@@ -1,25 +1,28 @@
 import type { ServiceReport } from "./types";
+import { fetchMapLoadCount } from "./posthog";
 
-/**
- * Mapbox Statistics API (statistics/v1/{username}/map-loads) returns
- * 401 "Direct access not allowed" regardless of token scopes — it is a
- * private/internal API used only by Mapbox's own dashboard.
- *
- * Map load counts must be self-tracked: increment a counter in MongoDB
- * each time the Mapbox map initializes on the web side, then read it here.
- * See: packages/portal/src/lib/services/map-load-counts.ts (TODO)
- */
 export async function fetchMapboxReport(): Promise<ServiceReport> {
   const limit = 50_000;
   const alertThreshold = parseInt(process.env.MAPBOX_ALERT_THRESHOLD ?? "40000", 10);
 
+  const mapLoads = await fetchMapLoadCount("mapbox");
+  const pct = mapLoads !== null ? mapLoads / limit : null;
+  const status =
+    pct === null
+      ? "unknown"
+      : pct >= 0.95
+        ? "critical"
+        : pct >= alertThreshold / limit
+          ? "warning"
+          : "ok";
+
   return {
     name: "Mapbox",
-    status: "unknown",
+    status,
     metrics: [
       {
         label: "Map loads this month",
-        value: null,
+        value: mapLoads,
         limit,
         unit: "loads",
         warningThreshold: alertThreshold / limit,
@@ -27,6 +30,6 @@ export async function fetchMapboxReport(): Promise<ServiceReport> {
       },
     ],
     lastChecked: new Date(),
-    note: "Requires self-tracking — Mapbox Statistics API is not publicly accessible",
+    note: mapLoads === null ? "POSTHOG_PERSONAL_API_KEY / POSTHOG_PROJECT_ID not set" : undefined,
   };
 }

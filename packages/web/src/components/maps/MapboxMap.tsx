@@ -4,6 +4,7 @@ import { useRef, useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import type { ViewStateChangeEvent } from "react-map-gl/mapbox";
+import { usePostHog } from "posthog-js/react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { BaseMarker } from "./BaseMarker";
 import type { MapProps } from "./types";
@@ -20,31 +21,26 @@ export function MapboxMap({
 }: MapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  // Gate marker rendering on the map being fully initialized. The Marker
-  // component from @vis.gl/react-mapbox calls marker.addTo(map) in a
-  // mount-only useEffect. If the Map component remounts (e.g. after a
-  // Suspense boundary triggers during navigation), the old mapbox-gl Map
-  // instance is destroyed before the new one is ready, causing an
-  // "appendChild on undefined" error. Resetting this flag on mount and
-  // waiting for onLoad ensures Markers only render against a live map.
   const [mapReady, setMapReady] = useState(false);
+  const ph = usePostHog();
 
-  // Mapbox GL JS does not detect container resizes driven by CSS transitions.
-  // A ResizeObserver on the wrapper fires during the transition and forces
-  // the canvas to match its container at every frame.
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      // Defer resize() out of the ResizeObserver callback so it never fires
-      // synchronously during React's layout phase. Calling resize() inline can
-      // trigger moveend → handleMove → setState while React is still committing,
-      // which causes "Maximum update depth exceeded".
       requestAnimationFrame(() => mapRef.current?.resize());
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (mapReady) {
+      ph?.capture("map_load", { provider: "mapbox" });
+    }
+    // ph is stable; only re-fire if mapReady flips (i.e. on mount)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
 
   useEffect(() => {
     if (!selectedMarkerCoords || !mapRef.current) return;

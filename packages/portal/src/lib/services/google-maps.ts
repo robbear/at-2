@@ -1,24 +1,27 @@
 import type { ServiceReport } from "./types";
+import { fetchMapLoadCount } from "./posthog";
 
-/**
- * Google Maps JS API usage data requires a GCP service account with
- * Monitoring Viewer role and Cloud Monitoring API access — non-trivial
- * to set up and in the same boat as Mapbox: better to self-track.
- *
- * Map load counts must be self-tracked: increment a counter in MongoDB
- * each time the Google Maps map initializes on the web side, then read it here.
- * See: packages/portal/src/lib/services/map-load-counts.ts (TODO)
- */
 export async function fetchGoogleMapsReport(): Promise<ServiceReport> {
   const limit = 900; // hard monthly cap with $1 budget alert
 
+  const mapLoads = await fetchMapLoadCount("google");
+  const pct = mapLoads !== null ? mapLoads / limit : null;
+  const status =
+    pct === null
+      ? "unknown"
+      : pct >= 0.9
+        ? "critical"
+        : pct >= 0.7
+          ? "warning"
+          : "ok";
+
   return {
     name: "Google Maps",
-    status: "unknown",
+    status,
     metrics: [
       {
         label: "JS API loads this month",
-        value: null,
+        value: mapLoads,
         limit,
         unit: "loads",
         warningThreshold: 0.7,
@@ -26,6 +29,6 @@ export async function fetchGoogleMapsReport(): Promise<ServiceReport> {
       },
     ],
     lastChecked: new Date(),
-    note: "Requires self-tracking — Cloud Monitoring API requires GCP service account",
+    note: mapLoads === null ? "POSTHOG_PERSONAL_API_KEY / POSTHOG_PROJECT_ID not set" : undefined,
   };
 }

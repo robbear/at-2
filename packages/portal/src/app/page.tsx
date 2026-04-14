@@ -7,6 +7,7 @@ import { fetchRailwayReport } from "@/lib/services/railway";
 import { fetchAtlasReport } from "@/lib/services/mongodb-atlas";
 import { fetchCloudflareR2Report } from "@/lib/services/cloudflare-r2";
 import { fetchGithubActionsReport } from "@/lib/services/github-actions";
+import { fetchPostHogReport } from "@/lib/services/posthog";
 import type { ServiceReport } from "@/lib/services/types";
 
 // Regenerate this page at most every 5 minutes
@@ -35,9 +36,10 @@ export default async function DashboardPage(): Promise<ReactNode> {
     fetchAtlasReport(),
     fetchCloudflareR2Report(),
     fetchGithubActionsReport(),
+    fetchPostHogReport(),
   ]);
 
-  const [mapbox, googleMaps, vercel, railway, atlas, cloudflare, github] = [
+  const [mapbox, googleMaps, vercel, railway, atlas, cloudflare, github, posthog] = [
     settledToReport(results[0]!, "Mapbox"),
     settledToReport(results[1]!, "Google Maps"),
     settledToReport(results[2]!, "Vercel"),
@@ -45,9 +47,10 @@ export default async function DashboardPage(): Promise<ReactNode> {
     settledToReport(results[4]!, "MongoDB Atlas"),
     settledToReport(results[5]!, "Cloudflare R2"),
     settledToReport(results[6]!, "GitHub Actions"),
+    settledToReport(results[7]!, "PostHog"),
   ];
 
-  const allReports = [mapbox, googleMaps, vercel, railway, atlas, cloudflare, github];
+  const allReports = [mapbox, googleMaps, vercel, railway, atlas, cloudflare, github, posthog];
   const criticalCount = allReports.filter((r) => r.status === "critical").length;
   const warningCount = allReports.filter((r) => r.status === "warning").length;
 
@@ -99,6 +102,15 @@ export default async function DashboardPage(): Promise<ReactNode> {
         <div className="grid gap-4 sm:grid-cols-2">
           <ServiceCard report={atlas} />
           <ServiceCard report={cloudflare} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+          Analytics
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ServiceCard report={posthog} />
         </div>
       </section>
 
