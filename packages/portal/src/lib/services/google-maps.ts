@@ -2,7 +2,7 @@ import type { ServiceReport } from "./types";
 import { fetchMapLoadCount } from "./posthog";
 
 export async function fetchGoogleMapsReport(): Promise<ServiceReport> {
-  const limit = 900; // hard monthly cap with $1 budget alert
+  const limit = 5000; // hard monthly cap with $5 budget alert
 
   const mapLoads = await fetchMapLoadCount("google");
   const pct = mapLoads !== null ? mapLoads / limit : null;
