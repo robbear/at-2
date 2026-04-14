@@ -62,6 +62,14 @@ interface AtlasClustersResponse {
   results?: AtlasCluster[];
 }
 
+interface AtlasProcess {
+  id: string; // hostname:port
+}
+
+interface AtlasProcessesResponse {
+  results?: AtlasProcess[];
+}
+
 interface AtlasMeasurement {
   name: string;
   dataPoints: { value: number | null; timestamp: string }[];
@@ -125,55 +133,60 @@ export async function fetchAtlasReport(): Promise<ServiceReport> {
 
     const clusterOk = cluster.stateName === "IDLE";
 
-    // Fetch storage + connection measurements (last 24h, 1-hour granularity)
-    const end = new Date().toISOString();
-    const start = new Date(Date.now() - 86_400_000).toISOString();
-    const measureUrl =
-      `${ATLAS_API}/groups/${projectId}/clusters/${cluster.name}/measurements` +
-      `?granularity=PT1H&period=P1D&m=DATA_SIZE_TOTAL&m=CONNECTIONS` +
-      `&start=${start}&end=${end}`;
-
-    const measureRes = await digestFetch(measureUrl, publicKey, privateKey);
+    // Measurements live at the process (host) level, not the cluster level.
+    // Fetch process list first, then query measurements on the first process.
     let storageMB: number | null = null;
     let connections: number | null = null;
 
-    if (measureRes.ok) {
-      const measureData = (await measureRes.json()) as AtlasMeasurementsResponse;
-      for (const m of measureData.measurements ?? []) {
-        const latest = [...m.dataPoints].reverse().find((p) => p.value !== null);
-        if (m.name === "DATA_SIZE_TOTAL" && latest?.value !== undefined) {
-          storageMB = Math.round((latest.value ?? 0) / (1024 * 1024));
-        }
-        if (m.name === "CONNECTIONS" && latest?.value !== undefined) {
-          connections = latest.value;
+    const processesRes = await digestFetch(
+      `${ATLAS_API}/groups/${projectId}/processes`,
+      publicKey,
+      privateKey,
+    );
+
+    if (!processesRes.ok) {
+      console.error("[atlas] processes error", processesRes.status, await processesRes.text());
+    } else {
+      const processesData = (await processesRes.json()) as AtlasProcessesResponse;
+      const process = processesData.results?.[0];
+      console.log(`[atlas] process: ${process?.id}`);
+
+      if (process) {
+        const end = new Date().toISOString();
+        const start = new Date(Date.now() - 86_400_000).toISOString();
+        const measureUrl =
+          `${ATLAS_API}/groups/${projectId}/processes/${process.id}/measurements` +
+          `?granularity=PT1H&m=CONNECTIONS` +
+          `&start=${start}&end=${end}`;
+
+        const measureRes = await digestFetch(measureUrl, publicKey, privateKey);
+        if (!measureRes.ok) {
+          console.error("[atlas] measurements error", measureRes.status, await measureRes.text());
+        } else {
+          const measureData = (await measureRes.json()) as AtlasMeasurementsResponse;
+          for (const m of measureData.measurements ?? []) {
+            const latest = [...m.dataPoints].reverse().find((p) => p.value !== null);
+            if (m.name === "DB_STORAGE_TOTAL" && latest?.value !== undefined) {
+              storageMB = Math.round((latest.value ?? 0) / (1024 * 1024));
+            }
+            if (m.name === "CONNECTIONS" && latest?.value !== undefined) {
+              connections = latest.value;
+            }
+          }
+          console.log(`[atlas] storage: ${storageMB}MB, connections: ${connections}`);
         }
       }
-      console.log(`[atlas] storage: ${storageMB}MB, connections: ${connections}`);
-    } else {
-      console.error("[atlas] measurements error", measureRes.status);
     }
 
-    const storagePct = storageMB !== null ? storageMB / 512 : null;
-    const overallStatus = !clusterOk
-      ? "critical"
-      : storagePct !== null && storagePct >= 0.9
-        ? "critical"
-        : storagePct !== null && storagePct >= 0.75
-          ? "warning"
-          : "ok";
+    const overallStatus = !clusterOk ? "critical" : "ok";
 
     return {
       name: "MongoDB Atlas",
       status: overallStatus,
       metrics: [
-        {
-          label: "Storage used",
-          value: storageMB,
-          limit: 512,
-          unit: "MB",
-          warningThreshold: 0.75,
-          criticalThreshold: 0.9,
-        },
+        ...(storageMB !== null
+          ? [{ label: "Storage used", value: storageMB, limit: 512, unit: "MB", warningThreshold: 0.75, criticalThreshold: 0.9 }]
+          : []),
         {
           label: "Connections",
           value: connections,
@@ -181,7 +194,7 @@ export async function fetchAtlasReport(): Promise<ServiceReport> {
           warningThreshold: 0.8,
         },
       ],
-      note: `Cluster: ${cluster.name} — ${cluster.stateName}`,
+      note: `Cluster: ${cluster.name} — ${cluster.stateName}${storageMB === null ? " · Storage metrics not available on M0" : ""}`,
       lastChecked: new Date(),
     };
   } catch (err) {
