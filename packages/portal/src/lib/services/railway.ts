@@ -4,21 +4,19 @@ const RAILWAY_GRAPHQL = "https://backboard.railway.app/graphql/v2";
 
 const DEPLOYMENTS_QUERY = `
   query PortalDeployments {
-    me {
-      projects {
-        edges {
-          node {
-            name
-            services {
-              edges {
-                node {
-                  name
-                  deployments(first: 5) {
-                    edges {
-                      node {
-                        status
-                        createdAt
-                      }
+    projects(first: 10) {
+      edges {
+        node {
+          name
+          services {
+            edges {
+              node {
+                name
+                deployments(first: 5) {
+                  edges {
+                    node {
+                      status
+                      createdAt
                     }
                   }
                 }
@@ -58,9 +56,7 @@ interface RailwayProject {
 
 interface RailwayResponse {
   data?: {
-    me?: {
-      projects?: { edges: { node: RailwayProject }[] };
-    };
+    projects?: { edges: { node: RailwayProject }[] };
   };
   errors?: { message: string }[];
 }
@@ -131,7 +127,7 @@ export async function fetchRailwayReport(): Promise<ServiceReport> {
   }
 
   if (data.errors?.length) {
-    console.error("[railway] GraphQL errors", data.errors);
+    console.error("[railway] GraphQL errors", JSON.stringify(data.errors, null, 2));
     return {
       name: "Railway (API)",
       status: "unknown",
@@ -141,7 +137,8 @@ export async function fetchRailwayReport(): Promise<ServiceReport> {
     };
   }
 
-  const projects = data.data?.me?.projects?.edges ?? [];
+
+  const projects = data.data?.projects?.edges ?? [];
   console.log(`[railway] fetched ${projects.length} projects`);
 
   // Collect all services across projects, find worst status
