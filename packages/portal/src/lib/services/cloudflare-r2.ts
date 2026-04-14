@@ -21,7 +21,6 @@ const USAGE_QUERY = `
         r2StorageAdaptiveGroups(
           limit: 1
           filter: { date_geq: $since, date_leq: $until }
-          orderBy: [date_DESC]
         ) {
           max { payloadSize }
         }
