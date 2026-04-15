@@ -4,6 +4,8 @@ import Link from "next/link";
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { Marker } from "@at-2/shared";
 import { resolveImageUrl } from "@/lib/r2-url";
+import { YouTube } from "@/components/mdx/YouTube";
+import { IFrame } from "@/components/mdx/IFrame";
 
 const r2BaseUrl = process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? "";
 
@@ -92,6 +94,11 @@ interface MarkerBodyProps {
  * (respecting hideSnippetImageInDetails) followed by the compiled MDX prose.
  * Used by both the preview panel and the detail view.
  */
+const iframeAuthorAllowlist = (process.env["IFRAME_AUTHOR_ALLOWLIST"] ?? "")
+  .split(",")
+  .map((id) => id.trim().toLowerCase())
+  .filter(Boolean);
+
 export async function MarkerBody({
   marker,
   searchString = "",
@@ -99,6 +106,9 @@ export async function MarkerBody({
   const imageUrl = resolveImageUrl(marker.snippetImage);
   const markerImages = marker.images ?? [];
   const AnchorComponent = makeAnchorComponent(searchString);
+  const canUseIframe =
+    iframeAuthorAllowlist.length === 0 ||
+    iframeAuthorAllowlist.includes(marker.userId.toLowerCase());
 
   let bodyContent: ReactElement;
   if (!marker.markdown || marker.markdown.trim() === "") {
@@ -114,6 +124,8 @@ export async function MarkerBody({
             <MdxImage src={src} alt={alt} images={markerImages} />
           ),
           a: AnchorComponent,
+          YouTube,
+          IFrame: canUseIframe ? IFrame : () => null,
         },
       });
       bodyContent = content;
