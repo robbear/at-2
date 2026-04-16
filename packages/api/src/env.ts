@@ -25,8 +25,8 @@ const RAILWAY_ENV_DEFAULTS: Record<string, { production: string; dev: string }> 
       dev: "atlasphere-v2-dev",
     },
     R2_PUBLIC_URL: {
-      production: "https://pub-2c867def25774b4da3d486fe0c677f64.r2.dev",
-      dev: "https://pub-63147a72c2cd47e8ab0f057c127fe103.r2.dev",
+      production: "https://r2.atlasphere-cdn.app",
+      dev: "https://r2dev.atlasphere-cdn.app",
     },
   };
 

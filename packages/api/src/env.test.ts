@@ -48,9 +48,7 @@ describe("resolveRailwayVar (via parseEnv)", () => {
 
     expect(env.MONGODB_DB_NAME).toBe("atlasphere-v2");
     expect(env.R2_BUCKET_NAME).toBe("atlasphere-v2");
-    expect(env.R2_PUBLIC_URL).toBe(
-      "https://pub-2c867def25774b4da3d486fe0c677f64.r2.dev",
-    );
+    expect(env.R2_PUBLIC_URL).toBe("https://r2.atlasphere-cdn.app");
     expect(env.RAILWAY_ENVIRONMENT_NAME).toBe("production");
   });
 
@@ -61,9 +59,7 @@ describe("resolveRailwayVar (via parseEnv)", () => {
 
     expect(env.MONGODB_DB_NAME).toBe("atlasphere-v2-dev");
     expect(env.R2_BUCKET_NAME).toBe("atlasphere-v2-dev");
-    expect(env.R2_PUBLIC_URL).toBe(
-      "https://pub-63147a72c2cd47e8ab0f057c127fe103.r2.dev",
-    );
+    expect(env.R2_PUBLIC_URL).toBe("https://r2dev.atlasphere-cdn.app");
     expect(env.RAILWAY_ENVIRONMENT_NAME).toBe("pr-42");
   });
 
