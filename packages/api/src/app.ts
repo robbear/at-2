@@ -1,3 +1,4 @@
+// PR test comment
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
