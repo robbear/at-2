@@ -10,7 +10,7 @@ interface YouTubeProps {
 export function YouTube({ id }: YouTubeProps): ReactElement {
   const [playing, setPlaying] = useState(false);
   const thumbnail = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1`;
 
   if (playing) {
     return (

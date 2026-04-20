@@ -250,7 +250,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
               if (e.key === "Enter") { e.preventDefault(); addTag(); }
             }}
             placeholder="Add a tag…"
-            className="flex-1 border border-slate-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
+            className="flex-1 border border-slate-200 rounded-md px-3 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
           />
           <button
             type="button"
@@ -275,7 +275,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
               if (e.key === "Enter") { e.preventDefault(); addAuthor(); }
             }}
             placeholder="Add a username…"
-            className="flex-1 border border-slate-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
+            className="flex-1 border border-slate-200 rounded-md px-3 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
           />
           <button
             type="button"
@@ -350,7 +350,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
               type="date"
               value={dateStart}
               onChange={(e) => setDateStart(e.target.value)}
-              className="w-full border border-slate-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
+              className="w-full border border-slate-200 rounded-md px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
             />
           </div>
           <div className="flex-1">
@@ -359,7 +359,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps): ReactElement {
               type="date"
               value={dateEnd}
               onChange={(e) => setDateEnd(e.target.value)}
-              className="w-full border border-slate-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
+              className="w-full border border-slate-200 rounded-md px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/40"
             />
           </div>
         </div>
