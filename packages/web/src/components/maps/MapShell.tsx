@@ -181,6 +181,13 @@ export function MapShell({
       setMapZoom(z);
       startTransition(() => {
         const p = new URLSearchParams(searchParams.toString());
+        // If the URL is still bare and saved state exists, the restore effect
+        // navigation is in-flight but hasn't re-rendered this component yet.
+        // Writing here with empty searchParams would produce a URL with only
+        // lat/lng/zoom, stripping the QuerySpec params (tags, userIds, etc.)
+        // before they arrive. Let the restore navigation win instead.
+        // First-time users with no saved state are unaffected (null check).
+        if (!p.toString() && readSavedMapPosition() !== null) return;
         p.set("lat", center.lat.toFixed(6));
         p.set("lng", center.lng.toFixed(6));
         p.set("zoom", z.toFixed(2));
