@@ -15,7 +15,7 @@ async function digestFetch(
 ): Promise<Response> {
   // Step 1: unauthenticated request to get the Digest challenge
   const probe = await fetch(url, {
-    headers: { Accept: "application/vnd.atlas.2023-01-01+json" },
+    headers: { Accept: "application/vnd.atlas.2024-11-13+json" },
     cache: "no-store",
   });
 
@@ -47,7 +47,7 @@ async function digestFetch(
   return fetch(url, {
     headers: {
       Authorization: authHeader,
-      Accept: "application/vnd.atlas.2023-01-01+json",
+      Accept: "application/vnd.atlas.2024-11-13+json",
     },
     cache: "no-store",
   });
@@ -98,7 +98,8 @@ export async function fetchAtlasReport(): Promise<ServiceReport> {
   }
 
   try {
-    // Fetch cluster list to get the first cluster name + state
+    // Fetch cluster list — check /clusters (dedicated M10+) then /flexClusters.
+    // After upgrading from Hobby to Flex, the cluster only appears in /flexClusters.
     const clustersRes = await digestFetch(
       `${ATLAS_API}/groups/${projectId}/clusters`,
       publicKey,
@@ -118,7 +119,24 @@ export async function fetchAtlasReport(): Promise<ServiceReport> {
     }
 
     const clustersData = (await clustersRes.json()) as AtlasClustersResponse;
-    const cluster = clustersData.results?.[0];
+    let cluster = clustersData.results?.[0];
+
+    if (!cluster) {
+      // Dedicated clusters endpoint returned nothing — try Flex clusters endpoint.
+      const flexRes = await digestFetch(
+        `${ATLAS_API}/groups/${projectId}/flexClusters`,
+        publicKey,
+        privateKey,
+      );
+      if (flexRes.ok) {
+        const flexData = (await flexRes.json()) as AtlasClustersResponse;
+        cluster = flexData.results?.[0];
+        console.log(`[atlas] flex cluster: ${cluster?.name} — ${cluster?.stateName}`);
+      } else {
+        console.error("[atlas] flexClusters error", flexRes.status, await flexRes.text());
+      }
+    }
+
     console.log(`[atlas] cluster: ${cluster?.name} — ${cluster?.stateName}`);
 
     if (!cluster) {
@@ -187,14 +205,11 @@ export async function fetchAtlasReport(): Promise<ServiceReport> {
         ...(storageMB !== null
           ? [{ label: "Storage used", value: storageMB, limit: 512, unit: "MB", warningThreshold: 0.75, criticalThreshold: 0.9 }]
           : []),
-        {
-          label: "Connections",
-          value: connections,
-          limit: 500,
-          warningThreshold: 0.8,
-        },
+        ...(connections !== null
+          ? [{ label: "Connections", value: connections, limit: 500, warningThreshold: 0.8 }]
+          : []),
       ],
-      note: `Cluster: ${cluster.name} — ${cluster.stateName}${storageMB === null ? " · Storage metrics not available on M0" : ""}`,
+      note: `Cluster: ${cluster.name} — ${cluster.stateName}${storageMB === null ? " · Per-process metrics not available on Flex/M0" : ""}`,
       lastChecked: new Date(),
     };
   } catch (err) {
