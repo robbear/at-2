@@ -19,6 +19,7 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { selectProvider } from "@/lib/map/provider-select";
 import { cn } from "@/lib/utils";
+import { readSavedMapPosition } from "@/hooks/usePersistedViewState";
 import { MarkerListPanel } from "@/components/markers/MarkerListPanel";
 import type { MapProps, MarkerDot, MarkerListItem } from "./types";
 
@@ -94,11 +95,16 @@ export function MapShell({
       const selected = initialMarkers.find((m) => m.id === markerId);
       if (selected) return { lat: selected.lat, lng: selected.lng };
     }
+    // Bare load — initialize at saved position so the map's initial onMove
+    // reports the right coords and doesn't overwrite the restored URL state.
+    const saved = readSavedMapPosition();
+    if (saved) return { lat: saved.lat, lng: saved.lng };
     return { lat: defaultLat, lng: defaultLng };
   });
-  const [mapZoom, setMapZoom] = useState(() =>
-    zoomParam !== null ? parseFloat(zoomParam) : defaultZoom,
-  );
+  const [mapZoom, setMapZoom] = useState(() => {
+    if (zoomParam !== null) return parseFloat(zoomParam);
+    return readSavedMapPosition()?.zoom ?? defaultZoom;
+  });
 
   // splitPct is the percentage of the available axis given to the MAP.
   const [splitPct, setSplitPct] = useState(SPLIT_DEFAULT);

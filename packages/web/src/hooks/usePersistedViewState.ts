@@ -36,6 +36,32 @@ function readSaved(): string | null {
   }
 }
 
+/**
+ * Reads the saved lat/lng/zoom from localStorage synchronously.
+ * Intended for use inside `useState` lazy initializers in map components
+ * so the map starts at the restored position rather than the defaults,
+ * preventing the initial `onMove` from overwriting the restored URL state.
+ * Returns null when localStorage is unavailable or has no saved position.
+ */
+export function readSavedMapPosition(): {
+  lat: number;
+  lng: number;
+  zoom: number;
+} | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    const p = new URLSearchParams(saved);
+    const lat = p.get("lat");
+    const lng = p.get("lng");
+    const zoom = p.get("zoom");
+    if (!lat || !lng || !zoom) return null;
+    return { lat: parseFloat(lat), lng: parseFloat(lng), zoom: parseFloat(zoom) };
+  } catch {
+    return null;
+  }
+}
+
 function writeSaved(searchParams: URLSearchParams): void {
   const p = new URLSearchParams();
   for (const key of PERSIST_KEYS) {
