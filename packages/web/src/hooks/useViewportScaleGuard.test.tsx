@@ -33,9 +33,12 @@ describe("useViewportScaleGuard", () => {
   afterEach(() => {
     if (metaEl.parentNode) metaEl.parentNode.removeChild(metaEl);
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
-  it("registers a resize listener on mount", () => {
+  // --- visualViewport.resize path ---
+
+  it("registers a resize listener on visualViewport", () => {
     renderHook(() => useViewportScaleGuard());
     expect(mockVV.addEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
   });
@@ -69,10 +72,7 @@ describe("useViewportScaleGuard", () => {
     const handler = mockVV.addEventListener.mock.calls[0]![1] as () => void;
     handler();
 
-    // Immediately after handler: meta should be pinned to maximum-scale=1
     expect(metaEl.content).toBe("width=device-width, initial-scale=1, maximum-scale=1");
-
-    // After rAF flush: original content restored
     rafCallbacks.forEach((cb) => cb(0));
     expect(metaEl.content).toBe("width=device-width, initial-scale=1");
   });
@@ -94,6 +94,48 @@ describe("useViewportScaleGuard", () => {
     const handler = mockVV.addEventListener.mock.calls[0]![1] as () => void;
     handler();
 
+    expect(metaEl.content).toBe("width=device-width, initial-scale=1");
+  });
+
+  // --- orientationchange path ---
+
+  it("registers an orientationchange listener on window", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    renderHook(() => useViewportScaleGuard());
+    expect(addSpy).toHaveBeenCalledWith("orientationchange", expect.any(Function));
+  });
+
+  it("deregisters the orientationchange listener on unmount", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { unmount } = renderHook(() => useViewportScaleGuard());
+    unmount();
+    expect(removeSpy).toHaveBeenCalledWith("orientationchange", expect.any(Function));
+  });
+
+  it("pins then restores viewport meta after orientationchange (unconditional, after 300 ms)", () => {
+    vi.useFakeTimers();
+    const rafCallbacks: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+      rafCallbacks.push(cb);
+      return rafCallbacks.length;
+    });
+
+    // scale is 1 — confirms the reset is unconditional (not gated on scale check)
+    mockVV.scale = 1;
+    renderHook(() => useViewportScaleGuard());
+
+    window.dispatchEvent(new Event("orientationchange"));
+
+    // Before 300 ms: nothing has happened yet
+    expect(metaEl.content).toBe("width=device-width, initial-scale=1");
+
+    vi.advanceTimersByTime(300);
+
+    // After 300 ms: meta pinned
+    expect(metaEl.content).toBe("width=device-width, initial-scale=1, maximum-scale=1");
+
+    // After rAF: original restored
+    rafCallbacks.forEach((cb) => cb(0));
     expect(metaEl.content).toBe("width=device-width, initial-scale=1");
   });
 });

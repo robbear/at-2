@@ -3,30 +3,49 @@
 import { useEffect } from "react";
 
 /**
- * Guards against iOS Safari leaving the visual viewport in a zoomed state
- * after exiting iframe fullscreen (e.g., YouTube). When `visualViewport.scale`
- * drifts from 1, briefly pins `maximum-scale=1` in the viewport meta tag to
- * force the browser to reset, then restores the original content.
+ * Briefly pins `maximum-scale=1` in the viewport meta tag, then restores
+ * the original value. This forces iOS Safari to reset a corrupted viewport
+ * scale back to 1.
+ */
+function pinAndRestoreScale(): void {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+  if (!meta) return;
+  const original = meta.content;
+  meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+  requestAnimationFrame(() => {
+    meta.content = original;
+  });
+}
+
+/**
+ * Guards against iOS Safari leaving the visual viewport in a zoomed state.
+ * Two triggers are handled:
+ *
+ * 1. `visualViewport.resize` — scale drift after iframe fullscreen exit or
+ *    similar events. Only resets when scale detectably differs from 1 (iOS
+ *    correctly reports the scale in these cases).
+ *
+ * 2. `orientationchange` — device rotation can leave the page appearing zoomed
+ *    even though `visualViewport.scale` still reports 1 (an iOS WebKit bug).
+ *    Reset is unconditional, applied after the rotation animation (~300 ms).
  */
 export function useViewportScaleGuard(): void {
   useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    function handleResize(): void {
+    function handleVisualViewportResize(): void {
       if (Math.abs((window.visualViewport?.scale ?? 1) - 1) < 0.01) return;
-      const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
-      if (!meta) return;
-      const original = meta.content;
-      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
-      requestAnimationFrame(() => {
-        meta.content = original;
-      });
+      pinAndRestoreScale();
     }
 
-    vv.addEventListener("resize", handleResize);
+    function handleOrientationChange(): void {
+      setTimeout(pinAndRestoreScale, 300);
+    }
+
+    window.visualViewport?.addEventListener("resize", handleVisualViewportResize);
+    window.addEventListener("orientationchange", handleOrientationChange);
+
     return () => {
-      vv.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("resize", handleVisualViewportResize);
+      window.removeEventListener("orientationchange", handleOrientationChange);
     };
   }, []);
 }
