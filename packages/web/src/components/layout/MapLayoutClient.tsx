@@ -9,6 +9,7 @@ import { MapShell } from "@/components/maps/MapShell";
 import { isQuerySpecActive } from "@/lib/queryspec-active";
 import { fetchMarkersAction } from "@/app/(map)/actions";
 import { selectProvider } from "@/lib/map/provider-select";
+import { usePersistedViewState } from "@/hooks/usePersistedViewState";
 import type { MarkerDot, MarkerListItem } from "@/components/maps/types";
 
 // Keys whose changes should trigger a marker re-fetch
@@ -58,6 +59,8 @@ export function MapLayoutClient({
   defaultZoom,
   children,
 }: MapLayoutClientProps): ReactElement {
+  usePersistedViewState();
+
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [markers, setMarkers] = useState(initialMarkers);
   const [markerListItems, setMarkerListItems] = useState(initialListItems);
