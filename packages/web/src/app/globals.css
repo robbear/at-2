@@ -26,6 +26,6 @@
   input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
   textarea,
   select {
-    @apply border border-input bg-background rounded-md px-3 py-2 text-sm;
+    @apply border border-input bg-background rounded-md px-3 py-2 text-base;
   }
 }
