@@ -45,4 +45,27 @@ describe("SearchPanel", () => {
     expect(screen.getByPlaceholderText(/add a tag/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/add a username/i)).toBeInTheDocument();
   });
+
+  // iOS Safari auto-zooms on input focus when font-size < 16px. All text and
+  // date inputs must use text-base (16px) or larger to prevent viewport zoom.
+  it("text inputs use text-base to prevent iOS auto-zoom on focus", () => {
+    render(<SearchPanel open={true} onClose={vi.fn()} />);
+    const textInputs = screen.getAllByRole("textbox");
+    for (const input of textInputs) {
+      expect(input.className, `input "${input.getAttribute("placeholder")}" must not use text-sm`)
+        .not.toMatch(/\btext-sm\b/);
+      expect(input.className, `input "${input.getAttribute("placeholder")}" must use text-base`)
+        .toMatch(/\btext-base\b/);
+    }
+  });
+
+  it("date inputs use text-base to prevent iOS auto-zoom on focus", () => {
+    const { container } = render(<SearchPanel open={true} onClose={vi.fn()} />);
+    const dateInputs = container.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(dateInputs.length).toBeGreaterThan(0);
+    for (const input of dateInputs) {
+      expect(input.className, "date input must not use text-sm").not.toMatch(/\btext-sm\b/);
+      expect(input.className, "date input must use text-base").toMatch(/\btext-base\b/);
+    }
+  });
 });
