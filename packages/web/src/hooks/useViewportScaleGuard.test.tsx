@@ -42,7 +42,7 @@ describe("useViewportScaleGuard", () => {
 
   it("deregisters the resize listener on unmount", () => {
     const { unmount } = renderHook(() => useViewportScaleGuard());
-    const registered = mockVV.addEventListener.mock.calls[0][1] as EventListener;
+    const registered = mockVV.addEventListener.mock.calls[0]![1] as EventListener;
     unmount();
     expect(mockVV.removeEventListener).toHaveBeenCalledWith("resize", registered);
   });
@@ -66,7 +66,7 @@ describe("useViewportScaleGuard", () => {
     mockVV.scale = 2.5;
     renderHook(() => useViewportScaleGuard());
 
-    const handler = mockVV.addEventListener.mock.calls[0][1] as () => void;
+    const handler = mockVV.addEventListener.mock.calls[0]![1] as () => void;
     handler();
 
     // Immediately after handler: meta should be pinned to maximum-scale=1
@@ -81,7 +81,7 @@ describe("useViewportScaleGuard", () => {
     mockVV.scale = 1;
     renderHook(() => useViewportScaleGuard());
 
-    const handler = mockVV.addEventListener.mock.calls[0][1] as () => void;
+    const handler = mockVV.addEventListener.mock.calls[0]![1] as () => void;
     handler();
 
     expect(metaEl.content).toBe("width=device-width, initial-scale=1");
@@ -91,7 +91,7 @@ describe("useViewportScaleGuard", () => {
     mockVV.scale = 1.009;
     renderHook(() => useViewportScaleGuard());
 
-    const handler = mockVV.addEventListener.mock.calls[0][1] as () => void;
+    const handler = mockVV.addEventListener.mock.calls[0]![1] as () => void;
     handler();
 
     expect(metaEl.content).toBe("width=device-width, initial-scale=1");
