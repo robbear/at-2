@@ -44,7 +44,8 @@ const DEFAULT_LNG = -60.8509;
 const DEFAULT_ZOOM = 2;
 
 // Splitter constraints (percentages of the available split axis).
-const SPLIT_DEFAULT = 50;
+const SPLIT_DEFAULT = 50;          // map pct in landscape (or desktop)
+const SPLIT_PORTRAIT_DEFAULT = 30; // map pct in portrait — smaller map, more preview
 const SPLIT_PREVIEW_MIN = 10; // preview cannot be smaller than this
 const SPLIT_MAP_COLLAPSE = 5; // map at or below this → transition to detail view
 
@@ -107,7 +108,13 @@ export function MapShell({
   });
 
   // splitPct is the percentage of the available axis given to the MAP.
-  const [splitPct, setSplitPct] = useState(SPLIT_DEFAULT);
+  // Initialized orientation-aware so portrait starts with a smaller map.
+  const [splitPct, setSplitPct] = useState(() => {
+    if (typeof window === "undefined") return SPLIT_DEFAULT;
+    return window.matchMedia("(orientation: portrait)").matches
+      ? SPLIT_PORTRAIT_DEFAULT
+      : SPLIT_DEFAULT;
+  });
 
   // listOpen: footer marker list is expanded (no URL change).
   const [listOpen, setListOpen] = useState(false);
@@ -136,7 +143,8 @@ export function MapShell({
   // navigating flag so handleMove works normally if the user returns from detail.
   useEffect(() => {
     if (hasPreview) {
-      setSplitPct(SPLIT_DEFAULT);
+      const portrait = window.matchMedia("(orientation: portrait)").matches;
+      setSplitPct(portrait ? SPLIT_PORTRAIT_DEFAULT : SPLIT_DEFAULT);
       navigatingToDetailRef.current = false;
     }
   }, [hasPreview, userId, timestamp]);
