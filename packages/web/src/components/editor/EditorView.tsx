@@ -458,13 +458,13 @@ export function EditorView({
 
       {/* ── Drag handle ── */}
       <div
-        className="h-5 flex items-center justify-center cursor-row-resize bg-slate-100 border-y border-slate-200 shrink-0 select-none z-10"
+        className="h-12 flex items-center justify-center cursor-row-resize bg-slate-100 border-y border-slate-200 shrink-0 select-none touch-none z-10 hover:bg-slate-200 active:bg-brand-blue/20 transition-colors"
         onPointerDown={onPointerDown}
         role="separator"
         aria-orientation="horizontal"
         aria-label="Resize map/editor panels"
       >
-        <span className="text-slate-400 text-lg leading-none">⋯</span>
+        <div className="h-1 w-8 rounded-full bg-slate-400 shrink-0" />
       </div>
 
       {/* ── Editor form panel ── */}
@@ -655,7 +655,7 @@ export function EditorView({
             <textarea
               value={markdown}
               onChange={(e) => setMarkdown(e.target.value)}
-              rows={10}
+              rows={20}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-blue resize-y"
               placeholder="Write your content in MDX…"
               disabled={busy}
