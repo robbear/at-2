@@ -21,10 +21,10 @@ function isInternalMarkerLink(href: string): boolean {
   );
 }
 
-// Strip leading / and /detail suffix to get the bare markerId.
-// e.g. "/robbearman/20260101120000000/detail" → "robbearman/20260101120000000"
+// Strip leading / and /details (or legacy /detail) suffix to get the bare markerId.
+// e.g. "/robbearman/20260101120000000/details" → "robbearman/20260101120000000"
 export function extractMarkerId(href: string): string {
-  return href.replace(/^\//, "").replace(/\/detail$/, "");
+  return href.replace(/^\//, "").replace(/\/details?$/, "");
 }
 
 export function buildPreservedParams(searchString: string): string {

@@ -35,8 +35,8 @@ describe("extractMarkerId", () => {
     );
   });
 
-  it("strips /detail suffix", () => {
-    expect(extractMarkerId("/alice/12345678901234567/detail")).toBe(
+  it("strips /details suffix", () => {
+    expect(extractMarkerId("/alice/12345678901234567/details")).toBe(
       "alice/12345678901234567",
     );
   });
@@ -107,17 +107,17 @@ describe("makeAnchorComponent", () => {
     expect(link.getAttribute("target")).toBeNull();
   });
 
-  it("strips /detail suffix from internal marker links", () => {
+  it("strips /details suffix from internal marker links", () => {
     const AnchorComponent = makeAnchorComponent("zoom=5");
     render(
-      <AnchorComponent href="/alice/12345678901234567/detail">
-        See detail
+      <AnchorComponent href="/alice/12345678901234567/details">
+        See details
       </AnchorComponent>,
     );
-    const link = screen.getByRole("link", { name: "See detail" });
+    const link = screen.getByRole("link", { name: "See details" });
     const href = link.getAttribute("href")!;
     expect(href).toContain("/alice/12345678901234567");
-    expect(href).not.toContain("/detail");
+    expect(href).not.toContain("/details");
   });
 
   it("treats legacy short-timestamp paths as internal links", () => {
