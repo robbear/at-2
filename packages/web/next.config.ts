@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@at-2/shared"],
+  async redirects() {
+    return [
+      {
+        source: "/:userId/:timestamp/detail",
+        destination: "/:userId/:timestamp/details",
+        permanent: true,
+      },
+    ];
+  },
   webpack(config) {
     // shared uses NodeNext-style .js extensions in TypeScript source;
     // teach webpack to resolve .js imports as .ts files when processing

@@ -121,7 +121,7 @@ export function MapShell({
 
   const provider = selectProvider(providerOverride, mpParam, defaultProvider);
   const hasMarker = Boolean(userId && timestamp);
-  const isDetail = pathname?.endsWith("/detail") ?? false;
+  const isDetail = pathname?.endsWith("/details") ?? false;
   const isEditor =
     (pathname?.endsWith("/edit") ?? false) || pathname === "/markers/new";
   const hasPreview = hasMarker && !isDetail && !isEditor;
@@ -304,7 +304,7 @@ export function MapShell({
         draggingRef.current = false;
         navigatingToDetailRef.current = true; // suppress moveend before route updates
         const p = new URLSearchParams(searchParams.toString());
-        router.push(`/${selectedMarkerId}/detail?${p.toString()}`);
+        router.push(`/${selectedMarkerId}/details?${p.toString()}`);
         return;
       }
 

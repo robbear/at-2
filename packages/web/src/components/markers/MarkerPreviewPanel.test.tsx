@@ -62,7 +62,7 @@ describe("MarkerPreviewPanel", () => {
     const fullViewLink = screen.getByRole("link", { name: /full view/i });
     expect(fullViewLink).toBeInTheDocument();
     expect(fullViewLink.getAttribute("href")).toMatch(
-      /^\/testuser\/1234567890\/detail/,
+      /^\/testuser\/1234567890\/details/,
     );
   });
 
