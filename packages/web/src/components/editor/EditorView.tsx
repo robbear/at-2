@@ -116,10 +116,15 @@ const DEFAULT_SPLIT = 35; // percent for map panel
 const MOBILE_SPLIT = 25;
 const MIN_MAP_PX = 80;
 
-function formatLatLng(lat: number, lng: number): string {
-  const latDir = lat >= 0 ? "N" : "S";
-  const lngDir = lng >= 0 ? "E" : "W";
-  return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lng).toFixed(4)}°${lngDir}`;
+function parseLatLng(input: string): { lat: number; lng: number } | null {
+  const parts = input.trim().split(/\s*,\s*/);
+  if (parts.length !== 2) return null;
+  const lat = parseFloat(parts[0]!);
+  const lng = parseFloat(parts[1]!);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (lat < -90 || lat > 90) return null;
+  if (lng < -180 || lng > 180) return null;
+  return { lat, lng };
 }
 
 export function EditorView({
@@ -166,6 +171,20 @@ export function EditorView({
   const [lng, setLng] = useState<number | null>(
     marker?.location.coordinates[0] ?? null,
   );
+  const [latLngInput, setLatLngInput] = useState<string>(() => {
+    const initLat = marker?.location.coordinates[1];
+    const initLng = marker?.location.coordinates[0];
+    if (initLat != null && initLng != null) {
+      return `${initLat.toFixed(6)}, ${initLng.toFixed(6)}`;
+    }
+    return "";
+  });
+  const [latLngError, setLatLngError] = useState<string | null>(null);
+  const [centerRequest, setCenterRequest] = useState<{
+    lat: number;
+    lng: number;
+    seq: number;
+  } | null>(null);
 
   // ── Images ──────────────────────────────────────────────────────────────────
   const [images, setImages] = useState<LocalImage[]>(() => {
@@ -247,6 +266,31 @@ export function EditorView({
     setTags(tags.filter((t) => t !== tag));
   }
 
+  function commitLatLng(): { lat: number; lng: number } | null {
+    const parsed = parseLatLng(latLngInput);
+    if (!parsed) {
+      setLatLngError(
+        latLngInput.trim()
+          ? "Invalid format — use lat, lng (e.g. 37.326, -121.946)"
+          : "Location is required — enter coordinates or click the map.",
+      );
+      return null;
+    }
+    const changed = parsed.lat !== lat || parsed.lng !== lng;
+    setLat(parsed.lat);
+    setLng(parsed.lng);
+    setLatLngInput(`${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
+    setLatLngError(null);
+    if (changed) {
+      setCenterRequest((prev) => ({
+        lat: parsed.lat,
+        lng: parsed.lng,
+        seq: (prev?.seq ?? 0) + 1,
+      }));
+    }
+    return parsed;
+  }
+
   async function handleFilesSelected(
     e: ChangeEvent<HTMLInputElement>,
   ): Promise<void> {
@@ -286,7 +330,7 @@ export function EditorView({
   const DEFAULT_FILL = "0094dd";
   const DEFAULT_OUTLINE = "ffffff";
 
-  function buildPayload(uploadedImages: LocalImage[], markerTimestamp?: string) {
+  function buildPayload(uploadedImages: LocalImage[], latVal: number, lngVal: number, markerTimestamp?: string) {
     const snippetImagePath = resolveSnippetImageForSave(
       uploadedImages,
       coverName,
@@ -315,7 +359,7 @@ export function EditorView({
         : mode === "edit" ? null : undefined,
       location: {
         type: "Point" as const,
-        coordinates: [lng!, lat!],
+        coordinates: [lngVal, latVal],
       },
       datetime: new Date(datetime).toISOString(),
     };
@@ -326,10 +370,23 @@ export function EditorView({
       alert("Title is required.");
       return;
     }
-    if (lat === null || lng === null) {
-      alert("Please set a location by clicking the map or dragging the pin.");
+
+    // Validate and resolve coordinates from the input field (source of truth).
+    // This also handles the case where the user typed but didn't blur/commit.
+    const resolved = parseLatLng(latLngInput);
+    if (!resolved) {
+      setLatLngError(
+        latLngInput.trim()
+          ? "Invalid format — use lat, lng (e.g. 37.326, -121.946)"
+          : "Location is required — enter coordinates or click the map.",
+      );
       return;
     }
+    setLat(resolved.lat);
+    setLng(resolved.lng);
+    setLatLngError(null);
+    const publishLat = resolved.lat;
+    const publishLng = resolved.lng;
 
     // Single timestamp for the entire publish: reuse the marker's existing
     // timestamp on edit, or generate a new one once for create.
@@ -373,16 +430,18 @@ export function EditorView({
     }
 
     // Phase 2: save to MongoDB
-    await saveMarker(uploadedImages, markerTimestamp);
+    await saveMarker(uploadedImages, publishLat, publishLng, markerTimestamp);
   }
 
   async function saveMarker(
     uploadedImages: LocalImage[],
+    latVal: number,
+    lngVal: number,
     markerTimestamp?: string,
   ): Promise<void> {
     setStatus("saving");
-    const payload = buildPayload(uploadedImages, markerTimestamp);
-    setSavedPayload({ images: uploadedImages, markerTimestamp });
+    const payload = buildPayload(uploadedImages, latVal, lngVal, markerTimestamp);
+    setSavedPayload({ images: uploadedImages, lat: latVal, lng: lngVal, markerTimestamp });
 
     try {
       let saved: Marker;
@@ -404,11 +463,14 @@ export function EditorView({
 
   async function handleRetrySave(): Promise<void> {
     if (!savedPayload) return;
-    const { images: imgs, markerTimestamp } = savedPayload as {
-      images: LocalImage[];
-      markerTimestamp: string;
-    };
-    await saveMarker(imgs, markerTimestamp);
+    const { images: imgs, lat: savedLat, lng: savedLng, markerTimestamp } =
+      savedPayload as {
+        images: LocalImage[];
+        lat: number;
+        lng: number;
+        markerTimestamp: string;
+      };
+    await saveMarker(imgs, savedLat, savedLng, markerTimestamp);
   }
 
   async function handleDelete(): Promise<void> {
@@ -450,7 +512,10 @@ export function EditorView({
           onLocationChange={(newLat, newLng) => {
             setLat(newLat);
             setLng(newLng);
+            setLatLngInput(`${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
+            setLatLngError(null);
           }}
+          centerRequest={centerRequest}
           providerOverride={providerOverride}
           defaultProvider={defaultProvider}
         />
@@ -684,16 +749,43 @@ export function EditorView({
             />
           </div>
 
-          {/* Location (read-only) */}
+          {/* Location */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Location
             </label>
-            <p className="text-sm text-slate-600">
-              {lat !== null && lng !== null
-                ? formatLatLng(lat, lng)
-                : "Not set — click the map or drag the pin"}
-            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={latLngInput}
+                onChange={(e) => {
+                  setLatLngInput(e.target.value);
+                  setLatLngError(null);
+                }}
+                onBlur={commitLatLng}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitLatLng();
+                  }
+                }}
+                className="flex-1 border border-slate-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                placeholder="lat, lng  (e.g. 37.3263, -121.9462)"
+                disabled={busy}
+              />
+              <button
+                type="button"
+                onClick={commitLatLng}
+                onMouseDown={(e) => e.preventDefault()}
+                className="px-3 py-2 bg-slate-100 text-slate-700 rounded text-sm hover:bg-slate-200 disabled:opacity-50 whitespace-nowrap"
+                disabled={busy}
+              >
+                Update map
+              </button>
+            </div>
+            {latLngError && (
+              <p className="text-red-500 text-sm mt-1">{latLngError}</p>
+            )}
           </div>
 
           {/* Status messages */}

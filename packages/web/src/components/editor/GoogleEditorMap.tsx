@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import {
   APIProvider,
   Map,
   AdvancedMarker,
   Pin,
+  useMap,
 } from "@vis.gl/react-google-maps";
 import { BaseMarker } from "@/components/maps/BaseMarker";
 
@@ -16,6 +17,21 @@ interface GoogleEditorMapProps {
   color?: string;
   outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
+  centerRequest?: { lat: number; lng: number; seq: number } | null;
+}
+
+function GoogleMapController({
+  centerRequest,
+}: {
+  centerRequest: { lat: number; lng: number; seq: number } | null | undefined;
+}): null {
+  const map = useMap();
+  useEffect(() => {
+    if (centerRequest && map) {
+      map.panTo({ lat: centerRequest.lat, lng: centerRequest.lng });
+    }
+  }, [centerRequest, map]);
+  return null;
 }
 
 const DEFAULT_LAT = 33.8337;
@@ -28,11 +44,19 @@ export function GoogleEditorMap({
   color = "#0094dd",
   outline = "#ffffff",
   onLocationChange,
+  centerRequest,
 }: GoogleEditorMapProps): ReactElement {
   const hasLocation = lat !== null && lng !== null;
   const [position, setPosition] = useState(
     hasLocation ? { lat: lat!, lng: lng! } : null,
   );
+
+  // Sync marker position when lat/lng change externally (e.g. text input commit).
+  useEffect(() => {
+    if (lat !== null && lng !== null) {
+      setPosition({ lat, lng });
+    }
+  }, [lat, lng]);
 
   const handleMapClick = useCallback(
     (evt: { detail?: { latLng?: { lat: number; lng: number } | null } }) => {
@@ -68,6 +92,7 @@ export function GoogleEditorMap({
         onClick={handleMapClick}
         gestureHandling="greedy"
       >
+        <GoogleMapController centerRequest={centerRequest} />
         {position && (
           <AdvancedMarker
             position={position}

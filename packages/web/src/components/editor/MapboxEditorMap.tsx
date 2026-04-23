@@ -13,6 +13,7 @@ interface MapboxEditorMapProps {
   color?: string;
   outline?: string;
   onLocationChange: (lat: number, lng: number) => void;
+  centerRequest?: { lat: number; lng: number; seq: number } | null;
 }
 
 const DEFAULT_LAT = 33.8337;
@@ -25,17 +26,19 @@ export function MapboxEditorMap({
   color = "#0094dd",
   outline = "#ffffff",
   onLocationChange,
+  centerRequest,
 }: MapboxEditorMapProps): ReactElement {
   const mapRef = useRef<MapRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hasLocation = lat !== null && lng !== null;
 
-  // Sync map center when location changes externally
+  // Fly to location when the user commits coordinates via the text input.
+  // Omitting zoom preserves the current zoom level.
   useEffect(() => {
-    if (lat !== null && lng !== null && mapRef.current) {
-      mapRef.current.flyTo({ center: [lng, lat], zoom: 10 });
+    if (centerRequest && mapRef.current) {
+      mapRef.current.flyTo({ center: [centerRequest.lng, centerRequest.lat] });
     }
-  }, [lat, lng]);
+  }, [centerRequest]);
 
   // Keep map canvas sized to container during CSS transitions
   useEffect(() => {
