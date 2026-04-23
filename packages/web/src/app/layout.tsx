@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, Lora } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { getBaseUrl } from "@/lib/base-url";
 import { auth } from "@/auth";
@@ -48,6 +49,8 @@ export const metadata: Metadata = {
   },
 };
 
+const gaId = process.env["NEXT_PUBLIC_GA_ID"];
+
 export default async function RootLayout({
   children,
 }: {
@@ -58,6 +61,17 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${dmSans.variable} ${lora.variable} font-sans`}>
         <Providers session={session}>{children}</Providers>
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
