@@ -41,20 +41,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 1,
   };
 
-  const markerEntries: MetadataRoute.Sitemap = markers.flatMap((m) => [
-    {
-      url: `${base}/${m.id}`,
-      lastModified: new Date(m.posttime),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${base}/${m.id}/details`,
-      lastModified: new Date(m.posttime),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-  ]);
+  // Only the canonical preview URL is included — /details is omitted to avoid
+  // signalling duplicate content to crawlers (both pages declare canonical as
+  // the preview URL via alternates.canonical in their metadata).
+  const markerEntries: MetadataRoute.Sitemap = markers.map((m) => ({
+    url: `${base}/${m.id}`,
+    lastModified: new Date(m.posttime),
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
 
   return [home, ...markerEntries];
 }
