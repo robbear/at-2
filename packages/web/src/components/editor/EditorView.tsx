@@ -202,6 +202,10 @@ export function EditorView({
           ?.name ?? "1.jpg")
       : "1.jpg",
   );
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(() => {
+    const s = marker?.snippetImage ?? "";
+    return s.startsWith("http://") || s.startsWith("https://") ? s : "";
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -331,11 +335,10 @@ export function EditorView({
   const DEFAULT_OUTLINE = "ffffff";
 
   function buildPayload(uploadedImages: LocalImage[], latVal: number, lngVal: number, markerTimestamp?: string) {
-    const snippetImagePath = resolveSnippetImageForSave(
-      uploadedImages,
-      coverName,
-      marker?.snippetImage,
-    );
+    const trimmedHeroUrl = heroImageUrl.trim();
+    const snippetImagePath = trimmedHeroUrl
+      ? trimmedHeroUrl
+      : resolveSnippetImageForSave(uploadedImages, coverName, marker?.snippetImage);
 
     const storedFill = markerColor.replace(/^#/, "").toLowerCase();
     const storedOutline = markerOutlineColor.replace(/^#/, "").toLowerCase();
@@ -567,6 +570,37 @@ export function EditorView({
               placeholder="Brief description (used in previews)"
               disabled={busy}
             />
+          </div>
+
+          {/* Hero image URL */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Hero image URL
+            </label>
+            <input
+              type="url"
+              value={heroImageUrl}
+              onChange={(e) => setHeroImageUrl(e.target.value)}
+              className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              placeholder="https://example.com/image.jpg"
+              disabled={busy}
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              If set, overrides any uploaded cover image
+            </p>
+            {heroImageUrl.trim() && (
+              <div className="mt-2 border border-slate-200 rounded overflow-hidden inline-block max-w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroImageUrl.trim()}
+                  alt="Hero image preview"
+                  className="max-h-32 max-w-full object-contain block"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Tags */}
