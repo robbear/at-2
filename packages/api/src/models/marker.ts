@@ -36,9 +36,10 @@ const markerSchema = new Schema<MarkerDoc>(
     images: {
       type: [
         {
-          _id: false,
-          name: { type: String, required: true },
-          r2Path: { type: String, required: true },
+          _id:    false,
+          name:   { type: String, required: true },
+          r2Path: { type: String }, // present for R2-backed images
+          url:    { type: String }, // present for external URL images
         },
       ],
       default: [],
