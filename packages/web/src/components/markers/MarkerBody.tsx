@@ -79,7 +79,9 @@ function MdxImage({
   images: Marker["images"];
 }): ReactElement {
   const imageEntry = images?.find((img) => img.name === src);
-  const resolved = imageEntry ? `${r2BaseUrl}/${imageEntry.r2Path}` : (src ?? "");
+  const resolved = imageEntry
+    ? ("r2Path" in imageEntry ? `${r2BaseUrl}/${imageEntry.r2Path}` : imageEntry.url)
+    : (src ?? "");
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={resolved} alt={alt ?? ""} className="max-w-full rounded" />;
 }

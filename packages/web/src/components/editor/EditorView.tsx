@@ -191,15 +191,19 @@ export function EditorView({
     if (!marker?.images?.length) return [];
     return marker.images.map((img, i) => ({
       name: img.name,
-      r2Path: img.r2Path,
-      previewUrl: `${process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? ""}/${img.r2Path}`,
+      r2Path: "r2Path" in img ? img.r2Path : null,
+      previewUrl:
+        "r2Path" in img
+          ? `${process.env["NEXT_PUBLIC_R2_PUBLIC_URL"] ?? ""}/${img.r2Path}`
+          : img.url,
       file: new File([], img.name), // placeholder — already uploaded
     }));
   });
   const [coverName, setCoverName] = useState<string>(
     marker?.snippetImage
-      ? (marker.images?.find((img) => img.r2Path === marker.snippetImage)
-          ?.name ?? "1.jpg")
+      ? (marker.images?.find((img) =>
+            ("r2Path" in img ? img.r2Path : img.url) === marker.snippetImage
+          )?.name ?? "1.jpg")
       : "1.jpg",
   );
   const [heroImageUrl, setHeroImageUrl] = useState<string>(() => {
