@@ -81,16 +81,20 @@ Should the MCP server be:
 
 ### Why Remote and Integrated
 
-**Distribution is solved by configuration, not installation.** A user connects by adding
-one line to their Claude Desktop or Cursor config:
+**Distribution is solved by configuration, not installation.** For HTTP-capable clients
+(Claude Code CLI, Cursor, Windsurf), a user connects by adding one entry to their config:
 
 ```json
-{ "mcpServers": { "atlasphere": { "url": "https://at-2api-production.up.railway.app/mcp" } } }
+{ "mcpServers": { "atlasphere": { "type": "http", "url": "https://at-2api-production.up.railway.app/api/v1/mcp", "headers": { "Authorization": "ApiKey atls_..." } } } }
 ```
 
 No npm install, no Node.js version requirement, no local process to keep running. For a
 non-technical user like a real estate broker, this is the difference between "this works"
 and "this requires a developer to set up."
+
+Claude Desktop is the current exception to this — it accepts only stdio processes in its
+`mcpServers` config, not remote URLs. This is a client-side limitation, not a protocol
+gap. See "Connecting MCP Clients" below for the full picture.
 
 **Deployment is trivial.** Deploy the API once; every user automatically gets the latest
 version of every tool. A separate package would need versioning, npm publishing, and user
@@ -220,6 +224,113 @@ before constructing the `AtlasContext`.
 When Atlasphere's user base grows and the broker-as-non-technical-user scenario becomes
 primary, upgrading to OAuth eliminates the "generate and manage an API key" step. This
 is a well-defined future upgrade path and does not affect the initial implementation.
+
+---
+
+## Connecting MCP Clients
+
+### Client Compatibility
+
+| Client | HTTP MCP (`url:`) | Notes |
+|---|---|---|
+| Claude Code CLI | ✓ | Works today via `--transport http` |
+| Cursor / Windsurf | ✓ | Works today via settings UI or config file |
+| Claude Desktop | ✗ | stdio only — see workaround below |
+
+StreamableHTTP is the MCP standard transport. Claude Desktop is the outlier; HTTP support
+is expected in a future release.
+
+### Claude Code CLI
+
+Claude Code CLI is also a first-class test environment for the Atlasphere MCP server,
+useful for validating tool behavior without leaving the development workflow.
+
+**Local development** (points at `localhost:3001`):
+
+```bash
+claude mcp add --scope user --transport http \
+  atlasphere \
+  http://localhost:3001/api/v1/mcp \
+  --header "Authorization: ApiKey atls_..."
+```
+
+**Production:**
+
+```bash
+claude mcp add --scope user --transport http \
+  atlasphere \
+  https://at-2api-production.up.railway.app/api/v1/mcp \
+  --header "Authorization: ApiKey atls_..."
+```
+
+Use `--scope user` so the API key is stored in `~/.claude.json` and never committed to
+the repository. The resulting config entry:
+
+```json
+{
+  "mcpServers": {
+    "atlasphere": {
+      "type": "http",
+      "url": "https://at-2api-production.up.railway.app/api/v1/mcp",
+      "headers": {
+        "Authorization": "ApiKey atls_..."
+      }
+    }
+  }
+}
+```
+
+Verify with `claude mcp list`. Once connected, Claude Code will use Atlasphere tools
+when relevant without requiring explicit tool-name invocation.
+
+### Cursor / Windsurf
+
+Same `type: "http"` + `url` + `headers` structure, configured via each client's MCP
+settings panel or config file. Consult the respective client documentation for the
+exact file path.
+
+### Claude Desktop: Current Workaround
+
+Claude Desktop accepts only stdio processes. The workaround uses `packages/api/src/mcp/stdio.ts`,
+which connects directly to MongoDB and identifies the user via `ATLAS_USER_ID`:
+
+```json
+{
+  "mcpServers": {
+    "atlasphere-local": {
+      "command": "/path/to/tsx",
+      "args": ["/path/to/packages/api/src/mcp/stdio.ts"],
+      "env": { "ATLAS_USER_ID": "your-handle" }
+    }
+  }
+}
+```
+
+This is a **developer-only path**. It requires Node.js, a local checkout of the repo,
+and knowledge of internal paths. It does not use API key authentication — trust is
+derived from ownership of the machine running the process. It is not the user experience
+described in "Why Remote and Integrated."
+
+The correct non-developer solution for Claude Desktop is a thin npm package
+(`atlasphere-mcp`) that reads `ATLASPHERE_API_KEY` from env and proxies
+stdio ↔ the production HTTP endpoint. The Claude Desktop config would then be:
+
+```json
+{
+  "mcpServers": {
+    "atlasphere": {
+      "command": "npx",
+      "args": ["-y", "atlasphere-mcp"],
+      "env": { "ATLASPHERE_API_KEY": "atls_..." }
+    }
+  }
+}
+```
+
+This package is not yet built. The decision is to build it when the first non-developer
+user needs Claude Desktop access, or when Claude Desktop adds HTTP MCP support —
+whichever comes first. Publishing an npm package carries versioning, security, and
+maintenance overhead that is not justified at zero non-developer users.
 
 ---
 
@@ -472,8 +583,9 @@ authenticated user.
   explicit opt-in for R2 durability; not required when using stable external URLs
 - Basic geocoding (Nominatim) used internally by tools that accept place names
 
-End state: a user can connect Claude Desktop to Atlasphere and create, edit, and find
-markers through conversation, referencing images by URL or copying them to R2 by choice.
+End state: a user can connect Claude Code CLI or Cursor to Atlasphere and create, edit,
+and find markers through conversation, referencing images by URL or copying them to R2
+by choice. Claude Desktop users with repo access can connect via the stdio shim.
 
 ### Phase 3: `atlasphere_agent` and POI Discovery
 
@@ -511,7 +623,7 @@ neighborhood map in one reply.
 | Constraint | Decision |
 |---|---|
 | Near-zero cost | Remote integrated into existing Railway deployment; OSM/Nominatim for geodata (free) |
-| Non-technical users | Remote MCP (URL config only); OAuth upgrade path for future |
+| Non-technical users | Remote MCP (URL config) for Claude Code/Cursor; Claude Desktop requires stdio shim today, npm bridge when users need it |
 | No image generation | Removed from scope |
 | No local filesystem | Remote MCP has no disk access; not needed — images come from public URLs |
 | Two image modes | External URL (default, link rot accepted) or R2-backed (explicit opt-in via `upload_image_from_url`) |
