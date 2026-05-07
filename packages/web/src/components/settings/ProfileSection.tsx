@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import type { ReactElement } from "react";
 import { User } from "lucide-react";
 import { updateProfileAction, presignProfilePicAction } from "@/app/settings/actions";
@@ -14,6 +14,14 @@ export function ProfileSection({ profile }: ProfileSectionProps): ReactElement {
   const [name, setName] = useState(profile?.name ?? "");
   const [bio, setBio] = useState(profile?.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.profilePicUrl ?? "");
+
+  // Cache-bust the stored URL after mount so the browser always fetches the
+  // current R2 object rather than a cached copy of a previous avatar.
+  useEffect(() => {
+    if (profile?.profilePicUrl) {
+      setAvatarUrl(`${profile.profilePicUrl}?v=${Date.now()}`);
+    }
+  }, [profile?.profilePicUrl]);
   const [isPending, startTransition] = useTransition();
   const [uploadPending, setUploadPending] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -28,14 +36,16 @@ export function ProfileSection({ profile }: ProfileSectionProps): ReactElement {
       const resized = await resizeToJpeg(file, 256);
       const result = await presignProfilePicAction("image/jpeg");
       if ("error" in result) throw new Error(result.error);
-      await fetch(result.uploadUrl, {
+      const uploadRes = await fetch(result.uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": "image/jpeg" },
         body: resized,
       });
-      setAvatarUrl(result.publicUrl);
+      if (!uploadRes.ok) throw new Error(`R2 upload failed: ${uploadRes.status}`);
+      setAvatarUrl(`${result.publicUrl}?v=${Date.now()}`);
     } catch {
-      // silent — avatar stays unchanged
+      setSaveStatus("error");
+      setSaveError("Image upload failed. Please try again.");
     } finally {
       setUploadPending(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -49,7 +59,7 @@ export function ProfileSection({ profile }: ProfileSectionProps): ReactElement {
       const result = await updateProfileAction({
         name,
         bio: bio || undefined,
-        profilePicUrl: avatarUrl || undefined,
+        profilePicUrl: avatarUrl ? avatarUrl.split("?")[0] : undefined,
       });
       if (result.error) {
         setSaveStatus("error");
