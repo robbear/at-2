@@ -29,8 +29,14 @@ export async function apiKeysRoute(app: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: "Invalid request body" });
       }
 
-      const rawKey = generateRawKey();
       const ApiKey = getApiKeyModel();
+
+      const existingCount = await ApiKey.countDocuments({ userId: request.user!.userId });
+      if (existingCount >= 10) {
+        return reply.status(400).send({ error: "Key limit reached. Maximum 10 API keys per user." });
+      }
+
+      const rawKey = generateRawKey();
       const doc = await ApiKey.create({
         keyHash:   hashKey(rawKey),
         profileId: request.user!.id,
