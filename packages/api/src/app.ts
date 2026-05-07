@@ -6,6 +6,7 @@ import { authRoutes } from "./routes/auth.js";
 import { markersRoutes } from "./routes/markers.js";
 import { profilesRoutes } from "./routes/profiles.js";
 import { uploadRoutes } from "./routes/upload.js";
+import { mcpRoutes } from "./routes/mcp.js";
 import { requireAuth } from "./middleware/auth.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -25,6 +26,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(markersRoutes);
   await app.register(profilesRoutes);
   await app.register(uploadRoutes);
+  await app.register(mcpRoutes);
 
   // Test-only protected route for verifying auth middleware
   if (process.env["NODE_ENV"] === "test") {
