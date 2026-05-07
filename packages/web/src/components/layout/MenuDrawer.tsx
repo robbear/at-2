@@ -97,6 +97,13 @@ export function MenuDrawer({ open, onClose, canToggleProvider = false, activePro
                   {session.user?.userId ?? session.user?.email}
                 </span>
               </p>
+              <Link
+                href="/settings"
+                onClick={onClose}
+                className="block px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700 transition-colors"
+              >
+                Settings
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
