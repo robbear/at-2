@@ -51,11 +51,13 @@ export function buildWeeklyDigest(reports: ServiceReport[]): AlertPayload {
   for (const r of reports) {
     lines.push(`${r.name} [${r.status.toUpperCase()}]`);
     for (const m of r.metrics) {
-      if (m.value !== null && m.limit !== null) {
-        const pct = Math.round((m.value / m.limit) * 100);
-        lines.push(`  ${m.label}: ${m.value} / ${m.limit} (${pct}%)`);
-      } else {
+      if (m.value === null) {
         lines.push(`  ${m.label}: unknown`);
+      } else if (m.limit !== null) {
+        const pct = Math.round((m.value / m.limit) * 100);
+        lines.push(`  ${m.label}: ${m.value}${m.unit ? ` ${m.unit}` : ""} / ${m.limit}${m.unit ? ` ${m.unit}` : ""} (${pct}%)`);
+      } else {
+        lines.push(`  ${m.label}: ${m.value}${m.unit ? ` ${m.unit}` : ""}`);
       }
     }
     if (r.note) lines.push(`  Note: ${r.note}`);
