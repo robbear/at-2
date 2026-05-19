@@ -7,9 +7,13 @@ export interface BillingInfo {
   lastInvoiceEndDate?: string;
 }
 
+interface AtlasLineItem {
+  totalPriceCents?: number;
+}
+
 interface AtlasInvoice {
   subtotalCents?: number;
-  amountBilled?: number;
+  lineItems?: AtlasLineItem[];
   startDate?: string;
   endDate?: string;
   statusName?: string;
@@ -20,7 +24,9 @@ interface AtlasInvoicesListResponse {
 }
 
 function toCents(invoice: AtlasInvoice): number {
-  return invoice.subtotalCents ?? Math.round((invoice.amountBilled ?? 0) * 100);
+  // Flex tier pending invoices have subtotalCents: 0; actual charges are in lineItems.
+  if (invoice.subtotalCents) return invoice.subtotalCents;
+  return (invoice.lineItems ?? []).reduce((sum, item) => sum + (item.totalPriceCents ?? 0), 0);
 }
 
 export async function fetchAtlasBilling(): Promise<BillingInfo | null> {
