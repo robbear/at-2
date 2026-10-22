@@ -392,3 +392,4 @@ to `atlasphere.app`).
 | `/docs/map-providers.md` | Provider switching, quota tracking, alerting |
 | `/docs/railway-environments.md` | Railway deployment contexts, env-specific variable resolution |
 | `/docs/pr-preview-flow.md` | PR preview environment flow, Railway→Vercel API URL injection, `VERCEL_URL` for app URL |
+| `/docs/incident-2026-10-railway.md` | **Current state:** site offline after Railway breach; what was rotated, lessons, relaunch checklist |
