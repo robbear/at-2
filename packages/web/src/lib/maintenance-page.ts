@@ -24,8 +24,27 @@ export const MAINTENANCE_HTML = `<!doctype html>
     font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   main { max-width: 34rem; text-align: center; }
-  .globe { font-size: 4rem; display: inline-block; animation: spin 12s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* CSS globe: a tiled "continents" layer scrolls west-to-east (left to
+     right) behind a circular mask; inset shadows give it a spherical look. */
+  .globe {
+    width: 96px; height: 96px; margin: 0 auto; border-radius: 50%;
+    background-color: var(--blue);
+    background-image:
+      radial-gradient(ellipse 14% 22% at 12% 38%, var(--green) 96%, transparent 100%),
+      radial-gradient(ellipse 8% 16% at 20% 70%, var(--green) 96%, transparent 100%),
+      radial-gradient(ellipse 10% 18% at 46% 42%, var(--green) 96%, transparent 100%),
+      radial-gradient(ellipse 7% 13% at 50% 68%, var(--green) 96%, transparent 100%),
+      radial-gradient(ellipse 20% 16% at 74% 34%, var(--green) 96%, transparent 100%),
+      radial-gradient(ellipse 7% 7% at 86% 74%, var(--green) 96%, transparent 100%);
+    background-size: 192px 96px;
+    background-repeat: repeat-x;
+    box-shadow:
+      inset -16px -10px 28px rgba(0, 0, 0, 0.45),
+      inset 8px 6px 16px rgba(255, 255, 255, 0.25),
+      0 6px 20px rgba(0, 0, 0, 0.15);
+    animation: spin 16s linear infinite;
+  }
+  @keyframes spin { from { background-position: 0 0; } to { background-position: 192px 0; } }
   @media (prefers-reduced-motion: reduce) { .globe { animation: none; } }
   h1 { font-family: Georgia, "Times New Roman", serif; font-size: 2rem; line-height: 1.2; margin: 0.5rem 0 1rem; }
   h1 span { color: var(--blue); }
@@ -39,7 +58,7 @@ export const MAINTENANCE_HTML = `<!doctype html>
 </head>
 <body>
 <main>
-  <div class="globe" aria-hidden="true">🌍</div>
+  <div class="globe" aria-hidden="true"></div>
   <h1><span>Atlasphere</span> is on vacation.</h1>
   <p>Every coordinate on Earth is still right where we left it. We just stepped
   away from the map for a little while to tidy up some plumbing behind the scenes.</p>
