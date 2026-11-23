@@ -117,7 +117,7 @@ archive.
 | Service | State |
 |---|---|
 | Railway | Project and account deleted |
-| MongoDB Atlas, v2 | Paid cluster deleted. The Atlasphere V2 project was emptied (delete it if not already done). Admin API key deleted. |
+| MongoDB Atlas, v2 | Paid cluster and the Atlasphere V2 project deleted (including its database users). Admin API key deleted. |
 | Cloudflare | R2 buckets, tokens and the `atlasphere-cdn.app` zone deleted. **Remove the card after 2026-12-18**, when the subscription ends. |
 | AWS | S3 buckets, Cognito resources and Atlasphere IAM users/roles deleted |
 | Mapbox | All tokens revoked |
